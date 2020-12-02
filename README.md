@@ -39,7 +39,9 @@ JWT_EXPIRE=30d||whatever you wish
 MONGOURI="mongodb+srv://<YOUR_MONGO_URI>?retryWrites=true&w=majority"
 ```
 Finally,create a new gmail account and configure it to allow for less secure app<br/>
-Replace user and pass fields in the files [auth.js](/controllers/auth.js) and [user.js]<br/> with your gmail address and its password<br/>The existing password has been changed so dont use it.
+
+Replace user and pass fields in the files <br/>[auth.js](/controllers/auth.js) and [user.js](/controllers/user.js)<br/>
+with your gmail address and its password<br/>The existing password has been changed so dont use it.
 
 After this head over to the main route and <br/>
 run each command in 2 separate windows of terminal 
