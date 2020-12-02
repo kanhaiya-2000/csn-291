@@ -71,9 +71,9 @@ export const timeSince = (timestamp,short) => {
     const data = new FormData();
     data.append("file", file);
     data.append("upload_preset", "complaintlodgeriitr");
-    data.append('cloud_name',"dzi99jhwn");
+    //data.append('cloud_name',"<>");
   
-    return fetch("https://api.cloudinary.com/v1_1/dzi99jhwn/image/upload", {
+    return fetch(`${process.env.REACT_APP_UPLOAD_URL}`, {
       method: "POST",
       body: data,
     }).then((res) => res.json());
