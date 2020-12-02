@@ -1,0 +1,17 @@
+/*hello world*/
+.footer{
+    position:fixed;
+   left: 0;
+   bottom: 0;
+   width: 100%;
+   text-align: center;   
+	text-shadow: 2px 2px 2px #eecb0e;
+	font-weight: bold;
+	font-family: cursive;
+	font-size: 18px;
+}
+.welcome{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+}
