@@ -1,12 +1,14 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState,useContext } from "react";
 import { useHistory, useParams } from "react-router-dom";
+import Linkify from 'react-linkify';
+import {CopyToClipboard} from 'react-copy-to-clipboard';
 import styled from "styled-components";
 import useLongPress from "../posts/useLongPress";
 import Avatar from "../../styles/Avatar";
 import Loader from "../utility/Loader";
 import { logout } from "../home/Home";
 import Modal from "../posts/Modal";
-import io from "socket.io-client";
+//import io from "Socket.io-client";
 import { connect, timeSince } from "../../utils/fetchdata";
 import Placeholder from "../utility/Placeholder";
 import { BackIcon,InboxIcon } from "../../Icons";
@@ -14,10 +16,25 @@ import Modify from "../../hooks/Modify";
 import { toast } from "react-toastify";
 import { ModalContentWrapper } from "../posts/PostComponents";
 import {ChatWrapper,ChatHeader} from "./Homechat";
+import { SocketContext } from "../../context/SocketContext";
 
 export const MessageRoom = styled.div`
    html,body{
        overflow-y:hidden !important;
+   }
+   .self a{
+       color:#38d567bf;
+   }
+   .infowrapper{
+       position:relative;
+       top:-5px;
+       cursor:pointer;
+   }
+   .fname{      
+       font-size:12px;
+       top:-6px;
+       color: ${(props) => props.theme.secondaryColor};
+       position:relative;
    }
    .intro{
     position: absolute !important;
@@ -45,7 +62,7 @@ export const MessageRoom = styled.div`
        background:${(props) => props.theme.bg} ;
         padding:15px;
         border-bottom:1px solid ${(props) => props.theme.borderColor} ;
-       height:55px;
+       height:60px;
        flex-wrap:nowrap; 
        z-index:30;      
        
@@ -80,6 +97,7 @@ export const MessageRoom = styled.div`
        width:calc(100% - 430px);
        position:fixed;
        right:0;
+       
        .footerchat{
            right:20px !important;
            width:calc(100% - 450px) !important;
@@ -131,9 +149,10 @@ svg[aria-label="Back"]{
     word-break:break-word;
 }
 .msgwrapper{
-    background: ${(props) => props.theme.borderColor};
+    background: ${(props) => props.theme.chatColor};
     color: ${(props) => props.theme.primaryColor};
     display:flex;
+    border:1px solid ${(props) => props.theme.borderColor};
     border-radius:22px;
     flex-direction:column;
     width:100%;
@@ -170,10 +189,10 @@ svg[aria-label="Back"]{
     }
   
 `;
-const ModalContent = ({ msgId, closeModal, roomid, msgdelete ,socket}) => {
+const ModalContent = ({ msgId, closeModal, roomid,Socket,isMine,text}) => {
     const Deletemsg = () => {
         closeModal();
-        socket.emit('delete',{msgId,roomid});
+        Socket.emit('delete',{msgId,roomid});
     }
     return (
         <Modal>
@@ -181,9 +200,11 @@ const ModalContent = ({ msgId, closeModal, roomid, msgdelete ,socket}) => {
                 <span className="danger" onClick={closeModal}>
                     Cancel
                  </span>
-              <span className="danger" onClick={Deletemsg}>
+                 <CopyToClipboard text={text} onCopy={()=>{toast.success("Copied!");closeModal()}}><span>Copy</span></CopyToClipboard>
+              {isMine&&<span className="danger" onClick={Deletemsg}>
                     Delete
-            </span>
+            </span>}
+           
             </ModalContentWrapper>
         </Modal>
     )
@@ -191,12 +212,13 @@ const ModalContent = ({ msgId, closeModal, roomid, msgdelete ,socket}) => {
 const Mainchat = () => {
     const { roomid } = useParams();
     const [users, setUsers] = useState([]);    
-    const [socket, setSocket] = useState(null);
+    const {Socket,setSocket} = useContext(SocketContext);
     const [Messages, setMessages] = useState([]);
     const token = localStorage.getItem('accesstoken');
     const [mobile,setMobile] = useState(false);
     const endRef = useRef(null);
     const inputRef = useRef(null);
+    const [mine,setIsMine] = useState(false);
     const [msgId, setId] = useState(null);
     const [loading, setLoading] = useState(true);
     const [loading1, setLoading1] = useState(true);
@@ -204,6 +226,7 @@ const Mainchat = () => {
     const [err, setErr] = useState("");
     const inp = Modify("");
     const [showmodel, setShowModal] = useState(false);
+    const [TXT,setCopyText] = useState("");
     const history = useHistory();
     const [user, setUser] = useState({});
     // const k = setTimeout(()=>{
@@ -216,29 +239,24 @@ const Mainchat = () => {
     }
 
     const makeSocketConnection = () => {
-        if (token && !socket) {
-            const socket = io.connect("http://localhost:55000", {
-                query: {
-                    token: token
-                }
-            });
-            if(socket.connected)
+        if (token && !Socket) {            
+            if(Socket.connected)
                return;
-            socket.connect();
-            socket.on("connect", () => {
-                setSocket(socket);
-                console.log(Messages);
-                // toast.success("socket connected");
+            Socket.connect();
+            Socket.on("connect", () => {
+                setSocket(Socket);
+               // console.log(Messages);
+                // toast.success("Socket connected");
 
             })
             
-            socket.on('errormsg',function(err){
+            Socket.on('errormsg',function(err){
                  toast.error(err);
             })
             
-            socket.on('disconnect', () => {
+            Socket.on('disconnect', () => {
                 setSocket(null);
-                toast.error('socket disconnected');                
+                toast.error('Socket disconnected');                
                 setTimeout(makeSocketConnection, 1000);
             })
         }
@@ -252,9 +270,11 @@ const Mainchat = () => {
         
         console.log('click is triggered')
     }
-    const idsetter = (id)=>{
+    const idsetter = (id,isMine,text)=>{
         console.log(id);
+        setIsMine(isMine);
         setId(id);
+        setCopyText(text);
     }
     const closeModal = () => {
         setShowModal(false);
@@ -263,13 +283,7 @@ const Mainchat = () => {
         shouldPreventDefault: true,
         delay: 700,
     };
-    const msgdelete = (id) => {
-        //console.log(commentId);
-        console.log("reached deleted");
-        const msgs = Messages.filter((msg) => { return msg._id !== id });
-        //console.log(comments);      
-        setMessages(msgs);
-    }
+    
     const longPressEvent = useLongPress(onLongPress, onClick, defaultOptions);
     useEffect(() => {
         if (window.innerWidth < 700) {
@@ -282,7 +296,7 @@ const Mainchat = () => {
         if(window.innerWidth>=700){
         connect('/user/chat', { method: "POST" }).then((chats) => {
             setUsers(chats.data);
-            console.log(chats.data);
+           // console.log(chats.data);
             setLoading1(false);
         }).catch(err => {
             err.logout && logout();
@@ -295,7 +309,7 @@ const Mainchat = () => {
     }
         connect('/chat/' + roomid, { method: "POST" }).then((detail) => {
             setMessages(detail.messages);
-            console.log(detail.messages);
+           // console.log(detail.messages);
             setUser(detail.user);
             setLoading(false);
             scrollToend();
@@ -308,65 +322,85 @@ const Mainchat = () => {
 
     }, []);
     useEffect(()=>{
-        socket&&socket.on("msg", function (data) {
+        Socket&&Socket.on("msg", function (data) {
             if(data.roomid==roomid){
             //Messages.push(data.data);
-            console.log(data);
+            //console.log(data);
             const newmsg = [...Messages, data];
             setMessages(newmsg);
             if(endRef?.current)
                 scrollToend()
-            
-            console.log("socketdata", Messages);
+                if(document.getElementById(data.roomid)){
+                    document.getElementById(data.roomid).textContent = data.text;                    
+                    document.getElementById(data.roomid).nextElementSibling.textContent = timeSince(data.createdAt,true);
+                }
+           // console.log("Socketdata", Messages);
         }
         else{
-            if(document.getElementById(data.roomid)){
+            if(mobile&&!data.isMine){
+                toast.success("\n"+data.sender+": "+data.text.substring(0,20)+"...");
+            }
+            else if(document.getElementById(data.roomid)){
                 document.getElementById(data.roomid).textContent = data.text;
                 document.getElementById(data.roomid).style.fontWeight="bold";
                 document.getElementById(data.roomid).style.color = "green";
-                document.getElementById(data.roomid).nextElementSibling.textContent = timeSince(data.createdAt,true)
-                toast.success("\n"+data.sender+": "+data.text.substring(0,20)+"...");
+                document.getElementById(data.roomid).nextElementSibling.textContent = timeSince(data.createdAt,true);
+                if(!data.isMine)
+                    toast.success("\n"+data.sender+": "+data.text.substring(0,20)+"...");
             }
-            else{
+            else{                
                 console.log('requesting verification');
-                socket.emit('requestverification',data.roomid);
+                Socket.emit('requestverification',data.roomid);
+                
             }
             
         }
         })
-        socket&&socket.on('deletingmsg',function(id){
+        Socket&&Socket.on('deletingmsg',function(id){
             document.getElementById(id.msgId)&&document.getElementById(id.msgId).remove();
         })
         return ()=>{
-            if(socket){
-            socket.off('deletingmsg');
-            socket.off('msg');
-            socket.off('errormsg');
-            socket.off('disconnect');
+            if(Socket){
+            Socket.off('deletingmsg');
+            Socket.off('msg');
+            Socket.off('errormsg');
+            Socket.off('disconnect');
             }
         }
         
-    },[Messages,socket]);
+    },[Messages,Socket]);
+    const componentDecorator = (href, text, key) => (
+        <a href={href} key={key} target="_blank">
+          {text}
+        </a>
+      );
+      
     useEffect(()=>{
-        socket&&socket.on('addnewlist',function(data){
+        Socket&&Socket.on('addnewlist',function(data){
             console.log('here');
-            if(!document.getElementById(data.id))
-            setUsers([data,...users]);
+            if(!document.getElementById(data.id)){
+                setUsers([data,...users]);
+                //toast.success("New message from "+data.username);
+            }
         });
-    },[users,socket])
+        return ()=>{
+            if(Socket)
+                Socket.off('addnewlist')
+        }
+    },[users,Socket])
     const handleSubmit = (e) => {
         if (e.keyCode === 13) {
             scrollToend();
-            //console.log(socket.id);
-            socket.emit("msg", { roomid: roomid, message: inp.value });
+            //console.log(Socket.id);
+            Socket.emit("msg", { roomid: roomid, message: inp.value });
             inp.setValue("");
         }
     }
     const handleSubmit2 = () => {        
             scrollToend();
-            //console.log(socket.id);
+            //console.log(Socket.id);
             inputRef.current.focus();
-            socket.emit("msg", { roomid: roomid, message: inp.value });
+            Socket.emit("msg", { roomid: roomid, message: inp.value });
             inp.setValue("");
         
     }
@@ -391,7 +425,7 @@ const Mainchat = () => {
                         users.length > 0 && (
                             users.map((user) => {
                                 return (
-                                    <div className="chatcomponent" onClick={() => history.push(`${user.uri}`)} key={user.id} title={user.username}>
+                                    <div className="chatcomponent" onClick={() => history.push(`${user.uri}`)} key={user.id} title={user.username} id={user.id}>
                                         <div className="chatavatar">
                                             <Avatar lg src={user?.avatar} />
                                         </div>
@@ -415,8 +449,9 @@ const Mainchat = () => {
                         <ModalContent
                             msgId={msgId}
                             roomid={roomid}
-                            msgdelete={msgdelete}
-                            socket={socket}
+                            text={TXT}
+                            isMine={mine}                            
+                            Socket={Socket}
                             closeModal={closeModal}
                         />
                     </Modal>
@@ -425,29 +460,32 @@ const Mainchat = () => {
             }
             <div className="roomHeader">
                 <div className="backbtn" onClick={() => history.push('/chat/inbox')}><BackIcon /></div>
-                <Avatar src={user.avatar} />
+                <Avatar src={user.avatar} style={{marginTop:"4px"}}/>
+                <div className="infowrapper" title={user.bio} onClick={()=>history.push(`/${user.username}`)}>
                 <h3 className="uname" style={{ fontWeight: 'bold' }}>{user.username}</h3>
+                <span className="fname">{user.fullname}</span>
+                </div>
             </div>
             <div className="message">
                 {
                     Messages.map((msg) => {
                     if(msg.isMine)
-                        return <div {...longPressEvent} onTouchStartCapture={()=>idsetter(msg._id)} onMouseDownCapture={()=>idsetter(msg._id)} id={msg._id} className="msgpiece" style={{ float: `${msg.isMine ? "right" : "left"}`,cursor:"pointer" }} key={msg._id}>
+                        return <div {...longPressEvent} onTouchStartCapture={()=>idsetter(msg._id,msg.isMine,msg.text)} onMouseDownCapture={()=>idsetter(msg._id,msg.isMine,msg.text)} id={msg._id} className="msgpiece" style={{ float: `${msg.isMine ? "right" : "left"}`,cursor:"pointer" }} key={msg._id}>
                             <div className="msgwrapper" style={{ paddingRight: "9px", paddingTop: "8px" }}>
-                                <div className="self">
+                            <Linkify componentDecorator={componentDecorator}><div className="self">
                                     {msg.text}
-                                </div>
+                                </div></Linkify>
                                 <div className="stamp" style={{ float: `${msg.isMine ? "right" : "left"}` }}>
                                     {timeSince(msg.createdAt, true)}
                                 </div>
                             </div>
                         </div>
                     else
-                    return <div  className="msgpiece" id={msg._id} style={{ float: `${msg.isMine ? "right" : "left"}` }} key={msg._id}>
+                    return <div  className="msgpiece" {...longPressEvent} onTouchStartCapture={()=>idsetter(msg._id,msg.isMine,msg.text)} onMouseDownCapture={()=>idsetter(msg._id,msg.isMine,msg.text)} id={msg._id} style={{ float: `${msg.isMine ? "right" : "left"}`,cursor:"pointer" }} key={msg._id}>
                             <div className="msgwrapper" style={{ paddingRight: "9px", paddingTop: "8px" }}>
-                                <div className="self">
+                                <Linkify componentDecorator={componentDecorator}><div className="self">
                                     {msg.text}
-                                </div>
+                                </div></Linkify>
                                 <div className="stamp" style={{ float: `${msg.isMine ? "right" : "left"}` }}>
                                     {timeSince(msg.createdAt, true)}
                                 </div>

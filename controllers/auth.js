@@ -1,14 +1,14 @@
 const db = require("../models/User");
 const OTPmodel = require("../models/OTPmodel");
 const nodemailer = require('nodemailer');
-
+const bcrypt = require("bcryptjs");
 var transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 465,
   secure: true,
   auth: {
      user: 'complaintlodgeriitr@gmail.com',
-     pass: 'hellokk1234!!'
+     pass: 'kkIITRcomplaintlodger12!!'
   }
 });
 exports.generateOTP =(n)=>{
@@ -48,7 +48,10 @@ exports.login = async (req, res, next) => {
       statusCode: 400,
     });
   }
-
+  if(!user.tempid){
+    user.tempid = this.generateOTP(16);
+    await user.save();
+  }
   // if exists, make sure the password matches
   const match = await user.checkPassword(password);
 
@@ -162,10 +165,10 @@ exports.changepassword = async(req,res,next)=>{
         message:"Please fill your new password"
       })
     }
-    if(password.length<6){
+    if(password.length<6||password.length>20){
       return next({
         statusCode:400,
-        message:"Password should be min 6 characters in length"
+        message:"Password should be min 6 and max 20 characters in length"
       })
     }
     if(!OTP){
@@ -184,7 +187,8 @@ exports.changepassword = async(req,res,next)=>{
          message:"No user found"
        })
      }
-     const tempid = this.generateOTP(16);     
+     const tempid = this.generateOTP(16);
+     user.socketId = [];     
     await user.updatePassword(password,tempid);
     await user.save();
     setTimeout(async function(){
@@ -246,9 +250,17 @@ exports.signup = async (req, res, next) => {
        statusCode:400,
      }) 
   }
+  if(password.length<6||password.length>20){
+    return next({
+      message:"Password should have 6-20 characters",
+      statusCode:400
+    })
+  }
   OTPVerify.remove();
   const tempid = this.generateOTP(16);
-  const user = await db.create({ fullname, username,tempid, email, password ,hostel,institute_id,isStudent});
+  const salt = await bcrypt.genSalt(10);
+  const pass = await bcrypt.hash(password, salt);
+  const user = await db.create({ fullname, username,tempid, email,hostel,institute_id,isStudent, password:pass });
 
   const token = user.getJwtToken();
 

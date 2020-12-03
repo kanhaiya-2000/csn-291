@@ -142,7 +142,7 @@ const NewChat = () => {
             <div className="inputdiv">
                 <input id="enter" value={inp.value} onChange={(e)=>{inp.onChange(e);filterUser()}} type="text" placeholder="Search user" className="input"/>
             </div>
-            <Placeholder text="Currently there is no user" title="No user found"/>
+            <Placeholder text="Currently there is no user" title="No user found" paddingTop="100px"/>
        </NewChatPage>
 
     return (

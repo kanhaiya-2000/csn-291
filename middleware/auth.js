@@ -27,6 +27,9 @@ exports.Verify = async (req, res, next) => {
             if (!User) {
                 return next({ message: `No User found for ID ${decoded.id} and tempid ${decoded.tempid}`,logout:true });
             }
+            if(!decoded.tempid||!User.tempid){
+                return next({ message: `Please login again to continue`,logout:true });
+            }
             if(User.tempid!=decoded.tempid){
                 return next({
                     message:"Your session expired.Please login again",

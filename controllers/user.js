@@ -13,7 +13,7 @@ var transporter = nodemailer.createTransport({
   secure: true,
   auth: {
     user: 'complaintlodgeriitr@gmail.com',
-    pass: 'hellokk1234!!'
+    pass: 'kkIITRcomplaintlodger12!!'
   }
 });
 exports.getUsers = asyncHandler(async (req, res, next) => {
@@ -62,18 +62,19 @@ exports.requestotp = asyncHandler(async (req, res, next) => {
 })
 exports.changePassword = asyncHandler(async (req, res, next) => {
   const { password, otp } = req.body;
-  if(password.length<6){
+  if(password.length<6||password.length>20){
     return next({
-      message:"minimum length of password must be 6",
-      statusCode:404
+      message:"password should be 6-20 characters in length",
+      statusCode:400
     })
   }
-  console.log(req.body);
+  //console.log(req.body);
   const otpif = await OTPmodel.findOne({ email: req.user.email, type: "changepassword", OTP: otp});
   //console.log(req.user.email,otp);  
   if (otpif) {
     const user = await User.findOne({email:req.user.email});
-    const tempid = generateOTP(16);    
+    const tempid = generateOTP(16); 
+    user.socketId = [];    
     await user.updatePassword(password,tempid);
     await user.save();
     const token = await user.getJwtToken();
@@ -262,9 +263,11 @@ exports.chatList = asyncHandler(async (req, res, next) => {
   }).sort("-lastupdated");
   const rooms = chatlists.filter(function(room){
     return room.participants.toString().includes(req.user.id)&&room.messages.length>0;
-  })
+  });
+  
   const data = [];
   rooms.forEach((room)=>{
+    //console.log("\n\n\n\n\n\n\n\n",room);
     data.push({avatar:room.participants.filter((user)=>user._id.toString()!=req.user.id)[0].avatar,username:room.participants.filter((user)=>user._id.toString()!=req.user.id)[0].username,lastmessage:room.messages[room.messages.length-1].text,timeSince:room.messages[room.messages.length-1].createdAt,uri:"/chat/t/"+room.name,id:room._id});
   })
 res.status(200).json({success:true,data:data});

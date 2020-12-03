@@ -30,8 +30,7 @@ const userSchema = new schema({
   },
   password: {
     type: String,
-    required: [true, "Please enter your password"],
-    minlength: [6, "Password should be atleast minimum of 6 characters"]
+    required: [true, "Please enter your password"],   
     //defines length restriction on password
   },
   socketId:{
@@ -75,19 +74,15 @@ const userSchema = new schema({
   },
 });
 
-userSchema.pre("save", async function (next) {
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
-  next();
-});
-
 userSchema.methods.getJwtToken = function () {
   return jwt.sign({ id: this._id,tempid:this.tempid }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRE,
   });
 };
 userSchema.methods.updatePassword = async function (password,tempid){
-  this.password = password;
+  const salt = await bcrypt.genSalt(10);
+  const pass = await bcrypt.hash(password, salt);
+  this.password = pass;
   this.tempid = tempid;
 }
 userSchema.methods.checkPassword = async function (password) {

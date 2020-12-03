@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { useHistory } from "react-router-dom";
 import styled from "styled-components";
 import Avatar from "../../styles/Avatar";
@@ -7,8 +7,9 @@ import { logout } from "../home/Home";
 import { connect, timeSince } from "../../utils/fetchdata";
 import Placeholder from "../utility/Placeholder";
 import { BackIcon, NewmsgIcon } from "../../Icons";
-import io from "socket.io-client";
+//import io from "Socket.io-client";
 import { MessageRoom } from "./Mainchat";
+import { SocketContext } from "../../context/SocketContext";
 
 
 
@@ -43,7 +44,7 @@ flex-direction:column;
 }
 @media screen and (min-width:700px){
     position:fixed;
-    left:20px;
+    left:20px;    
 }
 .chatcomponent{
     width:100%;
@@ -121,6 +122,9 @@ svg[aria-label="Chat"]{
 svg[aria-label="Back"]{
     transform:rotate(-90deg);
 }
+@media screen and (min-width:800px){
+    top:130px
+}
 @media screen and (max-width:700px){
     width:100%;
     height:100%;
@@ -158,23 +162,19 @@ const Homechat = () => {
     const [err, showErr] = useState("");
     const [mobile,setIsMobile] = useState(false);
     const [loading, setLoading] = useState(true);
-    const [chatSocket,setSocket] = useState(null);
+    const {Socket,setSocket} = useContext(SocketContext);
+    
     const token = localStorage.getItem('accesstoken');
     const history = useHistory();
     const makeSocketConnection = () => {
-        if (token && !chatSocket) {
-            const socket = io.connect("http://localhost:55000", {
-                query: {
-                    token: token
-                }
-            });
-            socket.on("connect", () => {
-                setSocket(socket);
+        if (token && !Socket) {            
+            Socket.on("connect", () => {
+                setSocket(Socket);
                 //console.log(Messages);
-                // toast.success("socket connected");
+                // toast.success("Socket connected");
 
             })
-            socket.on('disconnect', () => {
+            Socket.on('disconnect', () => {
                 setSocket(null);
                 setTimeout(makeSocketConnection, 3000);
             })
@@ -198,18 +198,12 @@ const Homechat = () => {
         })
         return () => {
             if (!window.location.toString().includes('chat'))
-                window.location.reload();
-                if(chatSocket){
-                chatSocket.off('deletingmsg');
-                chatSocket.off('connect');
-                chatSocket.off('disconnect');
-                chatSocket.off('msg');
-                }
-                //chatSocket&&chatSocket.disconnect();
+                window.location.reload();                
+                //Socket&&Socket.disconnect();
         }
     }, [setLoading, showErr]);
     useEffect(()=>{        
-        chatSocket&&chatSocket.on('msg',function(data){
+        Socket&&Socket.on('msg',function(data){
             if(document.getElementById(data.roomid)){
                 document.getElementById(data.roomid).textContent = data.text;
                 document.getElementById(data.roomid).style.fontWeight="bold";
@@ -218,23 +212,35 @@ const Homechat = () => {
             }
             else{
                 console.log('requesting verification')
-                chatSocket.emit('requestverification',data.roomid);
+                Socket.emit('requestverification',data.roomid);
             }
             
             //console.log(data);
         });
         
-        chatSocket&&chatSocket.on('deletingmsg',function(data){
+        Socket&&Socket.on('deletingmsg',function(data){
             console.log("del ",data)
         })
-    },[chatSocket])
+        return ()=>{
+            if(Socket){
+                Socket.off('deletingmsg');
+                Socket.off('connect');
+                Socket.off('disconnect');
+                Socket.off('msg');
+                }
+        }
+    },[Socket])
     useEffect(()=>{
-        chatSocket&&chatSocket.on('addnewlist',function(data){
-            console.log('here');
+        Socket&&Socket.on('addnewlist',function(data){
+            console.log('here'+JSON.stringify(data));
             if(!document.getElementById(data.id))
-            setUsers([data,...users]);
+                setUsers([data,...users]);
         });
-    },[users,chatSocket])
+        return ()=>{
+            if(Socket)
+                Socket.off('addnewlist')
+        }
+    },[users,Socket])
     if (loading) {
         return <Loader />;
     }
@@ -251,7 +257,8 @@ const Homechat = () => {
             <ChatHeader history={history}/>
             <Placeholder
                 title="Start a new chat"
-                text="Click icon at the top right corner to start a chat"
+                text="Your chat is private"
+                icon="privateicon"
             />
             </ChatWrapper>
             {!mobile&&<MessageRoom>
@@ -271,7 +278,7 @@ const Homechat = () => {
                         users.length > 0 && (
                             users.map((user) => {
                                 return (
-                                    <div className="chatcomponent" onClick={() => history.push(`${user.uri}`)} key={user.id}>
+                                    <div className="chatcomponent" onClick={() => history.push(`${user.uri}`)} key={user.id} id={user.id}>
                                         <div className="chatavatar">
                                             <Avatar lg src={user?.avatar} />
                                         </div>

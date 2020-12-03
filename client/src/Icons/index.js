@@ -270,7 +270,8 @@ export const NewPostIcon = (props) => (
 export const PrivateIcon = (props) =>(
   <svg 
       {...props}
-       width="16" 
+       width="16"
+       aria-label="private" 
        height="16"
        xmlns="http://www.w3.org/2000/svg"
        fillRule="evenodd"

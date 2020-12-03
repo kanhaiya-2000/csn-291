@@ -45,6 +45,8 @@ const server = app.listen(
   console.log(`server started in ${process.env.NODE_ENV} mode at port ${PORT}`)
 );
 const io = require("socket.io")(server, {
+  pingInterval: 10000,
+  pingTimeout: 5000,
   cors: {
     origin: '*',
   }});
@@ -53,6 +55,7 @@ io.use(async(socket,next)=>{
 try{
   const decoded = await jwt.verify(socket.handshake.query.token,process.env.JWT_SECRET);
   socket.uid = decoded.id;
+  socket.tempid = decoded.tempid;
   next();
 
 }
@@ -63,7 +66,7 @@ catch(err){
 io.on("connection",async function(socket){
   console.log(socket.uid+" connected!");
   //console.log(typeof(socket.id));
-  await User.findByIdAndUpdate(socket.uid,{
+  await User.findOneAndUpdate({_id:socket.uid,tempid:socket.tempid},{
     $push:{socketId:socket.id}
   });
   socket.on('joinroom',function(room){
@@ -72,6 +75,10 @@ io.on("connection",async function(socket){
   })
   socket.on('requestverification',async function(data){
     const userit = await User.findById(socket.uid);
+    if(userit.tempid!=socket.tempid){
+      socket.emit('errormsg',"Please login again");
+      return;
+    }
     const ifnew = await Chat.findOne({name:data}).populate({
       path:"participants",
     select:"avatar username socketId"
@@ -80,14 +87,14 @@ io.on("connection",async function(socket){
     select:"createdAt text"
   });
   console.log("ifnew",ifnew);
-  if(ifnew&&ifnew.participants.toString().includes(socket.uid)&&data.split('_')[1]==socket.uid&&userit){
+  if(ifnew&&ifnew.participants.toString().includes(socket.uid)&&userit){
     for(i of userit.socketId)
     io.to(i).emit('addnewlist',{avatar:ifnew.participants.filter((user)=>user._id.toString()!=socket.uid)[0].avatar,username:ifnew.participants.filter((user)=>user._id.toString()!=socket.uid)[0].username,lastmessage:ifnew.messages[ifnew.messages.length-1].text,timeSince:ifnew.messages[ifnew.messages.length-1].createdAt,uri:"/chat/t/"+data,id:ifnew._id});
     console.log('request verified for room '+data);
   }
   })
   socket.on('connect',async function(){
-    await User.findByIdAndUpdate(socket.uid,{
+    await User.findOneAndUpdate({_id:socket.uid,tempid:socket.tempid},{
      $push:{socketId:socket.id}
     });
   })
@@ -99,6 +106,10 @@ io.on("connection",async function(socket){
     });
     //console.log("detail\n\n\n"+userdetail);
     const user = await User.findById(socket.uid);
+    if(user.tempid!=socket.tempid){
+      socket.emit('errormsg',"Please login again");
+      return;
+    }
     if(!userdetail||!userdetail.participants.toString().includes(socket.uid)||!user){
       //socket.emit("deletelast");
       return;
@@ -124,6 +135,10 @@ io.on("connection",async function(socket){
     const user = await User.findById(socket.uid);
     if(!user)
        return;
+    if(user.tempid!=socket.tempid){
+        socket.emit('errormsg',"Please login again");
+        return;
+      }
     if(user.socketId.indexOf(socket.id)==-1)
       user.socketId.push(socket.id);
     await user.save();    
@@ -156,7 +171,7 @@ io.on("connection",async function(socket){
    // console.log(data);
   })
   socket.on('disconnect',async function(){
-    await User.findByIdAndUpdate(socket.uid,{
+    await User.findOneAndUpdate({_id:socket.uid},{
       $pull:{socketId:socket.id}
      });   
     console.log(socket.id+'disconnected '+socket.uid);
