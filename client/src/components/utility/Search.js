@@ -116,7 +116,7 @@ const Search = () => {
         onBlur={()=>setTimeout(function(){setSearch([])},500)}
         onKeyDown={handleSearch}
         onChange={searchterm.onChange}
-        placeholder="Search by fullname"
+        placeholder="Search a peep"
       />
       {!hide &&
         <SearchResults result={Search} />

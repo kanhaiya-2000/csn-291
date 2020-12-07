@@ -48,14 +48,14 @@ exports.getPost = asyncHandler(async (req, res, next) => {
   post.likers = [];
   post.isLiked = post.likes.toString().includes(req.user.id);
   post.likes.forEach(async function (id) {
-    //////console.log(id);
+    ////////console.log(id);
     let user = await User.findById(id).lean().exec();
-    //////console.log(user);
+    ////////console.log(user);
     if (user) {
-      ////console.log(user);
+      //////console.log(user);
       post.likers.push({ username: user.username, id: id.toString(), avatar: user.avatar, fullname: user.fullname });
 
-      //////console.log(likes)
+      ////////console.log(likes)
     }
   })
 
@@ -74,13 +74,13 @@ exports.getPost = asyncHandler(async (req, res, next) => {
   });
 
   setTimeout(function () {
-    ////console.log(post);    
+    //////console.log(post);    
     res.status(200).json({ success: true, data: post });
   }, 1000)
 });
 exports.Highlight = asyncHandler(async (req, res, next) => {
   const post = await Post.find({ isPrivate: false, resolved: false }).sort({ commentsCount: -1 }).sort({ likesCount: -1 });
-  ////console.log(post);
+  //////console.log(post);
   res.status(200).json({ success: true, data: post });
 })
 exports.reportComplain = asyncHandler(async (req, res, next) => {
@@ -92,6 +92,7 @@ exports.reportComplain = asyncHandler(async (req, res, next) => {
       statusCode: 404,
     });
   }
+  
   if (post.isPrivate && !post.accessibility.includes(req.user.username)) {
     return next({
       message: "Access denied",
@@ -104,12 +105,43 @@ exports.reportComplain = asyncHandler(async (req, res, next) => {
       statusCode: 401
     })
   }
-
+  const report = await Report.findOne({reporter:req.user.id});
+  if(!post.reportCount){
+    post.reportCount = 0;
+  }
+  if(report){
+    post.reportCount = post.reportCount - 1;
+    await report.remove();//delete previous report filed by this user and replace it with new report
+  }
+  post.reportCount = post.reportCount + 1;
+  if(post.reportCount>15){
+    await Notification.create({receiver:[post.user._id],sender:post.user._id,notifiedMessage:"We are sorry that your previous post was deleted because of a larger number of reports against your complaintpost",avatar:post.files[0]});
+    await Notification.deleteMany({postId:post._id},(err,res)=>{});
+    await Comment.deleteMany({post:post._id},(err,res)=>{});    
+    this.postDelOp(post.user._id,post._id);
+    await post.remove();
+  }
+  else{
+    await post.save();
+  }
   await Report.create({ description: req.body.reportText, postId: req.params.id, reporter: req.user.id });
   res.status(200).json({ success: true, data: {} });
 
-
 })
+exports.postDelOp = async function(id,pid){
+  await User.findByIdAndUpdate(id,{
+    $inc: { postCount: -1 },
+  });
+  await Report.deleteMany({postId:pid},(err,res)=>{
+    console.log('reports cleared')
+  })
+  await User.find({}, {
+    $pull: { posts: pid },
+    $pull:{taggedComplaints:pid},
+    $pull:{savedComplaints:pid},    
+  });
+  
+}
 exports.deletePost = asyncHandler(async (req, res, next) => {
   const post = await Post.findById(req.params.id);
 
@@ -126,11 +158,12 @@ exports.deletePost = asyncHandler(async (req, res, next) => {
       statusCode: 401,
     });
   }
-  
+  this.postDelOp(req.user.id,req.params.id);
   await Notification.deleteMany({ postId: req.params.id }, function (err, res) {
     //if(err)
-    ////console.log(err);
+    //////console.log(err);
   });
+  await Comment.deleteMany({post:req.params.id},function(err,res){});
   for (tag of post.tags) {
     const usermodel = await User.findOne({ username: tag });
     const index = await usermodel.taggedComplaints.indexOf(post._id);
@@ -146,16 +179,17 @@ exports.deletePost = asyncHandler(async (req, res, next) => {
 exports.addPost = asyncHandler(async (req, res, next) => {
   const { caption, files, tags, isPrivate, accessibility } = req.body;
   const user = req.user.id;
-  ////console.log(req.body);
-  let post = await Post.create({ caption, files, tags, user, isPrivate, accessibility });
+  //////console.log(req.body);
+  let post = await Post.create({ caption, files, tags, user, isPrivate, accessibility});
   if (isPrivate) {
     await Notification.create({ receiver: accessibility.filter((tag) => { return tag != req.user.username }), avatar: files[0], sender: user, postId: post._id, type: "newPost", url: `/p/${post._id}`, notifiedMessage: `${req.user.username} added a private complaint post and tagged you.Click to view it` });
   }
+  //console
   else {
     let receiver = req.user.followers;
     if (receiver)
       receiver = receiver.concat(tags.filter((tag) => { return tag != req.user.username }));
-    ////console.log(receiver);
+    //////console.log(receiver);
     await Notification.create({ receiver: receiver, avatar: files[0], sender: user, postId: post._id, type: "newPost", url: `/p/${post._id}`, notifiedMessage: `${req.user.username} added a general complaint post.Click to view it` });
   }
 
@@ -189,7 +223,7 @@ exports.toggleLike = asyncHandler(async (req, res, next) => {
     });
   }
 
-  if (post.user.toString() != req.user.id && (post.accessibility.length > 0 && !post.accessibility.includes(req.user.username))) {
+  if (post.user.toString() != req.user.id && post.isPrivate&&!post.accessibility.includes(req.user.username)) {
     return next({
       message: "You are not authorised to access this post",
       statusCode: 401,
@@ -200,8 +234,8 @@ exports.toggleLike = asyncHandler(async (req, res, next) => {
     post.likes.splice(index, 1);
     post.likesCount = post.likesCount - 1;
     if (req.user.id !== post.user._id.toString())
-      await Notification.find({ receiver: [post.user._id], sender: req.user.id, postId: post._id, type: "likedPost", notifiedMessage: `${req.user.username} liked your post` }).remove();
-      await Notification.find({sender:req.user.id,postId:post._id,type:"likedPost"}).remove();
+      await Notification.deleteOne({ receiver: [post.user._id], sender: req.user.id, postId: post._id, type: "likedPost", notifiedMessage: `${req.user.username} liked your post` },function(err,res){});
+      await Notification.deleteOne({sender:req.user.id,postId:post._id,type:"likedPost"},function(err,res){});
     await post.save();
   } else {
     post.likes.push(req.user.id);
@@ -217,7 +251,10 @@ exports.toggleLike = asyncHandler(async (req, res, next) => {
 });
 
 exports.addComment = asyncHandler(async (req, res, next) => {
-  const post = await Post.findById(req.params.id);
+  const post = await Post.findById(req.params.id).populate({
+    path:"user",
+    select:"username"
+  });
 
   if (!post) {
     return next({
@@ -225,7 +262,7 @@ exports.addComment = asyncHandler(async (req, res, next) => {
       statusCode: 404,
     });
   }
-  if (post.user.toString() != req.user.id && (post.accessibility.length > 0 && !post.accessibility.includes(req.user.username))) {
+  if (post.user.username != req.user.username && post.isPrivate&&!post.accessibility.includes(req.user.username)) {
     return next({
       message: "You are not authorised to access this post",
       statusCode: 401,
@@ -261,7 +298,7 @@ exports.deleteComment = asyncHandler(async (req, res, next) => {
     });
   }
 
-  if (post.user.toString() != req.user.id && (post.accessibility.length > 0 && !post.accessibility.includes(req.user.username))) {
+  if (post.user.toString() != req.user.id &&post.isPrivate&&!post.accessibility.includes(req.user.username)){
     return next({
       message: "You are not authorised to access this post",
       statusCode: 401,
@@ -287,7 +324,7 @@ exports.deleteComment = asyncHandler(async (req, res, next) => {
   }
   await Notification.deleteOne({ sender: req.user.id, postId: req.params.id, commentId: req.params.commentId }, function (err, res) {
     //if(err)
-    ////console.log(err);
+    //////console.log(err);
   });
 
   // remove the comment from the post
@@ -302,9 +339,9 @@ exports.deleteComment = asyncHandler(async (req, res, next) => {
 });
 
 exports.searchPost = asyncHandler(async (req, res, next) => {
-  if (!req.query.caption && !req.query.tag) {
+  if (!req.query.caption) {
     return next({
-      message: "Please enter either caption or tag to search for",
+      message: "Enter the caption for post",
       statusCode: 400,
     });
   }
@@ -313,13 +350,9 @@ exports.searchPost = asyncHandler(async (req, res, next) => {
 
   if (req.query.caption) {
     const regex = new RegExp(req.query.caption, "i");
-    posts = await Post.find({ caption: regex }).where({ 'accessibility': [...req.user.id] });
+    posts = await Post.find({ caption: regex});
   }
-
-  if (req.query.tag) {
-    posts = posts.concat([await Post.find({ tags: req.query.tag }).where({ 'accessibility': [...req.user.id] })]);
-  }
-
+  posts = posts.filter((post)=>{return !post.isPrivate||post.accessibility.includes(req.user.username)})
   res.status(200).json({ success: true, data: posts });
 });
 exports.resolveComplaint = asyncHandler(async (req, res, next) => {
@@ -338,7 +371,7 @@ exports.resolveComplaint = asyncHandler(async (req, res, next) => {
   }
   post.resolved = req.body.markresolved;
   await post.save();
-  await Notification.find({ sender: req.user.id, postId: req.params.id, type: "Resolved" }).remove();
+  await Notification.deleteOne({ sender: req.user.id, postId: req.params.id, type: "Resolved" },function(err,res){});
   await Notification.create({ sender: req.user.id, postId: req.params.id, type: "Resolved", avatar: post.files[0], receiver: req.user.followers.concat(post.accessibility), url: `/p/${req.params.id}`, notifiedMessage: `${req.user.username} marked a ${post.isPrivate ? "private" : "public"} complain as ${post.resolved ? "resolved" : "unresolved"}` });
   res.status(200).json({ success: true, data: {} });
 
@@ -353,8 +386,8 @@ exports.toggleSave = asyncHandler(async (req, res, next) => {
       statusCode: 404,
     });
   }
-  console.log(post);
-  if (post.user.toString() != req.user.id && (post.accessibility.length > 0 && !post.accessibility.includes(req.user.username))) {
+  //console.log(post);
+  if (post.user.toString() != req.user.id &&post.isPrivate && !post.accessibility.includes(req.user.username)) {
     return next({
       message: "You are not authorised to access this post",
       statusCode: 401,
@@ -363,12 +396,12 @@ exports.toggleSave = asyncHandler(async (req, res, next) => {
   const { user } = req;
 
   if (user.savedComplaints.includes(req.params.id)) {
-    ////console.log("removing saved complain");
+    //////console.log("removing saved complain");
     await User.findByIdAndUpdate(user.id, {
       $pull: { savedComplaints: req.params.id },
     });
   } else {
-    ////console.log("saving complain");
+    //////console.log("saving complain");
     await User.findByIdAndUpdate(user.id, {
       $push: { savedComplaints: req.params.id },
     });

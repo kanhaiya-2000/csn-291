@@ -7,8 +7,8 @@ var transporter = nodemailer.createTransport({
   port: 465,
   secure: true,
   auth: {
-     user: 'complaintlodgeriitr@gmail.com',
-     pass: 'kkIITRcomplaintlodger12!!'
+     user: process.env.EMAIL,
+     pass: process.env.EMAIL_PASS
   }
 });
 exports.generateOTP =(n)=>{
@@ -88,7 +88,7 @@ exports.OTPVerify = async(req,res,next) =>{
   await OTPmodel.create({email,OTP,expires});
   const msg ={
     to:email,
-    from:"complaintlodgeriitr@gmail.com",
+    from:process.env.EMAIL,
     subject:"OTP for signup",
     text:"Hello "+email+",\nhere is the OTP for signup\n"+OTP+"\n\nThis OTP will expire in 2 hours\nThis is system generated mail.So kindly do not reply.\n\nRegards\n CLTIITR",
     
@@ -128,7 +128,7 @@ exports.requestOTPForPwChange = async (req, res, next) =>{
   }
   const msg ={
     to:email,
-    from:"complaintlodgeriitr@gmail.com",
+    from:process.env.EMAIL,
     subject:"OTP for recovering account",
     text:"Hello "+email+",\nhere is the OTP for recovering your account\n"+OTP+"\n\nThis OTP will expire in 2 hours\nThis is system generated mail.So kindly do not reply.\n\nRegards\n CLTIITR",
     

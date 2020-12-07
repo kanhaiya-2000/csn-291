@@ -237,6 +237,7 @@ export const CloseIcon = (props) => (
 export const LoaderIcon = (props) => (
   <svg 
   version="1.1" 
+  aria-label="loader"
   xmlns="http://www.w3.org/2000/svg"
   height="20" 
   width="20"  

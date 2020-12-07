@@ -7,7 +7,7 @@ import Avatar from "../../styles/Avatar";
 import modify from "../../hooks/Modify";
 import { UserContext } from "../../context/UserContext";
 import { uploadImage,connect} from "../../utils/fetchdata";
-
+import imageCompression from 'browser-image-compression';
 
 export const Wrapper = styled.div`
   padding: 1rem;
@@ -81,10 +81,14 @@ const ProfileForm = () => {
   const username = modify(user.username||"");
   const bio = modify(user.bio||"");
   const website = modify(user.website||"");
-
+  const options = {
+    maxSizeMB: 0.1,
+    maxWidthOrHeight: 1920,
+    useWebWorker: true
+  }
   const handleImageUpload = (e) => {
-    if (e.target.files[0]) {
-      uploadImage(e.target.files[0]).then((res) =>
+    if (e.target.files[0]&&e.target.files[0].type.split('/')[0]==='image') {
+      imageCompression(e.target.files[0],options).then((cf)=>uploadImage(cf)).then((res) =>
         setNewAvatar(res.secure_url)
       ).catch((err)=>{
         return toast.error(err.message);

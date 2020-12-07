@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import Modal from "../posts/Modal";
 import modify from "../../hooks/Modify";
 import { FeedContext } from "../../context/FeedContext";
+import imageCompression from 'browser-image-compression';
 import {ThemeContext} from "../../context/ThemeContext";
 import { connect, uploadImage } from "../../utils/fetchdata";
 import { NewPostIcon } from "../../Icons";
@@ -99,7 +100,11 @@ const CreateNew = () => {
   const {theme} = useContext(ThemeContext);
   const [preview, setPreview] = useState("");
   const [postImage, setPostImage] = useState("");
-
+  const options = {
+    maxSizeMB: 0.3,
+    maxWidthOrHeight: 1920,
+    useWebWorker: true
+  }
   const addTags = ()=>{
     if((privates&&privatesTags.includes(tag.value))||(!privates&&publicTags.includes(tag.value)))
         return toast.error("Already added to tag list");
@@ -119,11 +124,11 @@ const CreateNew = () => {
   const handleUploadImage = (e) => {
     if (e.target.files[0]&&e.target.files[0].type.split('/')[0]==='image') {  
       toast.success('uploading your pic...');    
-      uploadImage(e.target.files[0]).then((res) => {
+      imageCompression(e.target.files[0], options).then((compressedfile)=>uploadImage(compressedfile)).then((res) => {
         setPreview(true);
         setPostImage(res.secure_url);
       }).catch((err)=>{
-        toast.error("error in uploading pic")
+        toast.error(err.message)
       });
     }
     else {

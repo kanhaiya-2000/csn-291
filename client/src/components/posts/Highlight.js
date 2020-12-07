@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import PostProfilePreview from "../dashboard/PostProfilePreview";
-import Loader from "../utility/Loader";
+//import Loader from "../utility/Loader";
 import Search from "../utility/Search";
 import { connect } from "../../utils/fetchdata";
 import {logout} from "../home/Home";
 const Highlight = () => {
-  const [loading, setLoading] = useState(true);
-  const [posts, setPosts] = useState([]);
+  //const [loading, setLoading] = useState(true);
+  const [posts, setPosts] = useState(null);
   const [Mobile,setMobile] = useState(false);
 
   useEffect(() => {
@@ -15,7 +15,7 @@ const Highlight = () => {
     }
     connect("/complain/highlight").then((res) => {
       setPosts(res.data);
-      setLoading(false);
+     // setLoading(false);
     }).catch(err=>{
       if(err.logout){
         logout();
@@ -23,9 +23,7 @@ const Highlight = () => {
     });
   }, [setMobile]);
 
-  if (loading) {
-    return <Loader />;
-  }
+  
 
   return (
     <>

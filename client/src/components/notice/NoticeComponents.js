@@ -1,9 +1,10 @@
 import React from "react";
 import styled from "styled-components";
 //import Modal from "./Modal";
-import {useHistory} from "react-router-dom";
+import { useHistory } from "react-router-dom";
 import Avatar from "../../styles/Avatar";
 import { timeSince } from "../../utils/fetchdata";
+import Skeleton from "react-loading-skeleton";
 
 
 export const NoticeWrapper = styled.div`
@@ -51,26 +52,48 @@ export const NoticeWrapper = styled.div`
   }
 `;
 
-const NoticeComponents = ({notice})=>{
-    const history = useHistory();
+const NoticeComponents = ({ notice }) => {
+  const history = useHistory();
+  if (!notice) {
     return (
-        <NoticeWrapper onClick={() =>{history.push(`${notice.url}`)}}>
-            <div className="notice-avatar">
-            <Avatar
-            className="pointer"
-            src={notice?.avatar||"https://kkleap.github.io/assets/default_noti.jpg"}
-            alt="noti"            
+      <NoticeWrapper>
+        <div className="notice-avatar">
+          <Skeleton
+            circle={true}
+            width={32}
+            height={32}
+            className={"pointer"}
           />
-            </div>
-            <div className="notice-body">
-                <div className="notice-body-text">                  
-                <p className={notice.seen?"middle":"bold"}>{notice.notifiedMessage}</p>
-                </div>
-                <div className="notice-footer">
-                    {timeSince(notice.createdAt)}
-                </div>
-                </div>
-        </NoticeWrapper>
+        </div>
+        <div className="notice-body">
+          <div className="notice-body-text">
+            <Skeleton className={"middle"} width={290} height={16} />
+          </div>
+          <div className="notice-footer">
+            <Skeleton width={20} height={8} />
+          </div>
+        </div>
+      </NoticeWrapper>
     );
+  }
+  return (
+    <NoticeWrapper onClick={() => { history.push(`${notice.url}`) }}>
+      <div className="notice-avatar">
+        <Avatar
+          className="pointer"
+          src={notice?.avatar || "https://kkleap.github.io/assets/default_noti.jpg"}
+          alt="noti"
+        />
+      </div>
+      <div className="notice-body">
+        <div className="notice-body-text">
+          <p className={notice.seen ? "middle" : "bold"}>{notice.notifiedMessage}</p>
+        </div>
+        <div className="notice-footer">
+          {timeSince(notice.createdAt)}
+        </div>
+      </div>
+    </NoticeWrapper>
+  );
 }
 export default NoticeComponents;

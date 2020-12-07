@@ -7,6 +7,7 @@ export const lightTheme = {
     white: "#FFF",
     borderColor: "#DBDBDB",
     chatColor:"#efefef",
+    skeleton:"#aaa",
     borderRadius: "4px",
     inputBg:"#FFF",
     footerColor:"#AED3D3"
@@ -15,6 +16,7 @@ export const lightTheme = {
     primaryColor: "#EEE",
     secondaryColor: "#3D3D3D",
     bg: "#030303",
+    skeleton:"#222",
     blue: "#0095F6",
     red: "#ED4956",
     white: "#111",

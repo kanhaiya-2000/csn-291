@@ -5,7 +5,7 @@ import {CopyToClipboard} from 'react-copy-to-clipboard';
 import styled from "styled-components";
 import useLongPress from "../posts/useLongPress";
 import Avatar from "../../styles/Avatar";
-import Loader from "../utility/Loader";
+//import Loader from "../utility/Loader";
 import { logout } from "../home/Home";
 import Modal from "../posts/Modal";
 //import io from "Socket.io-client";
@@ -15,12 +15,18 @@ import { BackIcon,InboxIcon } from "../../Icons";
 import Modify from "../../hooks/Modify";
 import { toast } from "react-toastify";
 import { ModalContentWrapper } from "../posts/PostComponents";
-import {ChatWrapper,ChatHeader} from "./Homechat";
+import {ChatWrapper,ChatHeader, ChatListLoader} from "./Homechat";
 import { SocketContext } from "../../context/SocketContext";
-
+import Skeleton, { SkeletonTheme } from 'react-loading-skeleton';
+import {ThemeContext} from "../../context/ThemeContext";
 export const MessageRoom = styled.div`
    html,body{
        overflow-y:hidden !important;
+   }
+   .unames{
+       position:relative;
+       top:15px;
+       left:20px;
    }
    .self a{
        color:#38d567bf;
@@ -157,6 +163,14 @@ svg[aria-label="Back"]{
     flex-direction:column;
     width:100%;
 }
+.msgwrapperd{
+    background: ${(props) => props.theme.chatColor};
+    color: ${(props) => props.theme.primaryColor};
+    display:flex;    
+    border-radius:22px;
+    flex-direction:column;
+    width:100%;
+}
   input{
        height:18px;
        width:100%;
@@ -222,7 +236,9 @@ const Mainchat = () => {
     const [msgId, setId] = useState(null);
     const [loading, setLoading] = useState(true);
     const [loading1, setLoading1] = useState(true);
-    const theme = { fill: "#888" };
+    const theme2 = { fill: "#888" };
+    const {theme} = useContext(ThemeContext);
+    const color = theme.skeleton;
     const [err, setErr] = useState("");
     const inp = Modify("");
     const [showmodel, setShowModal] = useState(false);
@@ -323,7 +339,7 @@ const Mainchat = () => {
     }, []);
     useEffect(()=>{
         Socket&&Socket.on("msg", function (data) {
-            if(data.roomid==roomid){
+            if(data.roomid===roomid){
             //Messages.push(data.data);
             //console.log(data);
             const newmsg = [...Messages, data];
@@ -370,7 +386,7 @@ const Mainchat = () => {
         
     },[Messages,Socket]);
     const componentDecorator = (href, text, key) => (
-        <a href={href} key={key} target="_blank">
+        <a href={href} key={key} target="_blank" rel="noopener noreferrer">
           {text}
         </a>
       );
@@ -404,14 +420,88 @@ const Mainchat = () => {
             inp.setValue("");
         
     }
-    if (loading||loading1)
-        return <Loader />
+    if (loading||loading1){
+        return <SkeletonTheme color={color}>       
+        {!mobile&&<ChatWrapper>
+        <ChatHeader history={history} />
+            <ChatListLoader color={color}/>
+        </ChatWrapper>}
+        <MessageRoom>
+            <div className="roomHeader">
+                <div className="backbtn"></div>
+                <Skeleton circle={true} height={32} width={32} />
+                <div className="infowrapper">
+                <Skeleton className={"unames"} width={90}/>
+                </div>
+            </div>
+            <div className="message" style={{overflowX:"hidden"}}>
+                     
+                    <div className="msgpiece" style={{ float:"right" ,cursor:"pointer" }}>
+                            <div  style={{ paddingRight: "9px", paddingTop: "8px" }}>
+                            <div className="self">
+                                    <Skeleton className={"msgwrapperd"} width={130} height={50}/>
+                                </div>                                
+                            </div>
+                        </div>
+                        <div className="msgpiece" style={{ float:"right" ,cursor:"pointer" }}>
+                            <div  style={{ paddingRight: "9px", paddingTop: "8px" }}>
+                            <div className="self">
+                                    <Skeleton className={"msgwrapperd"} width={160} height={50}/>
+                                </div>                                
+                            </div>
+                        </div>
+                        <div className="msgpiece" style={{ float:"left" ,cursor:"pointer" }}>
+                            <div  style={{ paddingRight: "9px", paddingTop: "8px" }}>
+                            <div className="self">
+                                    <Skeleton className={"msgwrapperd"} width={100} height={50}/>
+                                </div>                                
+                            </div>
+                        </div>
+                        <div className="msgpiece" style={{ float:"left" ,cursor:"pointer" }}>
+                            <div  style={{ paddingRight: "9px", paddingTop: "8px" }}>
+                            <div className="self">
+                                    <Skeleton className={"msgwrapperd"} width={140} height={50}/>
+                                </div>                                
+                            </div>
+                        </div>
+                        <div className="msgpiece" style={{ float:"right" ,cursor:"pointer" }}>
+                            <div  style={{ paddingRight: "9px", paddingTop: "8px" }}>
+                            <div className="self">
+                                    <Skeleton className={"msgwrapperd"} width={180} height={50}/>
+                                </div>                                
+                            </div>
+                        </div>
+                        <div className="msgpiece" style={{ float:"right" ,cursor:"pointer" }}>
+                            <div  style={{ paddingRight: "9px", paddingTop: "8px" }}>
+                            <div className="self">
+                                    <Skeleton className={"msgwrapperd"} width={100} height={50}/>
+                                </div>                                
+                            </div>
+                        </div>
+                        <div className="msgpiece" style={{ float:"left" ,cursor:"pointer" }}>
+                            <div  style={{ paddingRight: "9px", paddingTop: "8px" }}>
+                            <div className="self">
+                                    <Skeleton className={"msgwrapperd"} width={130} height={50}/>
+                                </div>                                
+                            </div>
+                        </div>
+                        <div className="msgpiece" style={{ float:"left" ,cursor:"pointer" }}>
+                            <div  style={{ paddingRight: "9px", paddingTop: "8px" }}>
+                            <div className="self">
+                                    <Skeleton className={"msgwrapperd"} width={125} height={50}/>
+                                </div>                                
+                            </div>
+                        </div>
+            </div>            
+        </MessageRoom>
+        </SkeletonTheme>
+    }
     if (err)
         return <Placeholder text={err} title="unable to load page" />
 
     return (
         <>
-        {!mobile&&users.length==0&&<ChatWrapper>
+        {!mobile&&users.length===0&&<ChatWrapper>
             <ChatHeader history={history}/>
             <Placeholder
                 title="Start a new chat"
@@ -506,7 +596,7 @@ const Mainchat = () => {
                         onKeyDown={handleSubmit}>
                     </input>
                 </div>
-                <div className="btn" onClick={handleSubmit2}><InboxIcon theme={theme} /></div>
+                <div className="btn" onClick={handleSubmit2}><InboxIcon theme={theme2} /></div>
             </div>
         </MessageRoom>
         </>

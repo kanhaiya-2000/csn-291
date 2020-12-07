@@ -71,8 +71,11 @@ const NavWrapper = styled.div`
       width:100%;
       padding:2px 5px;
       left:0;
-      height:40px;
+      height:50px;
       margin-bottom:-2px;
+    }
+    ul{
+      top:8px;
     }
     .navlink{
       display:none !important;

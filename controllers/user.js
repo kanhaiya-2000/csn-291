@@ -12,9 +12,9 @@ var transporter = nodemailer.createTransport({
   port: 465,
   secure: true,
   auth: {
-    user: 'complaintlodgeriitr@gmail.com',
-    pass: 'kkIITRcomplaintlodger12!!'
-  }
+    user: process.env.EMAIL,
+    pass: process.env.EMAIL_PASS
+ }
 });
 exports.getUsers = asyncHandler(async (req, res, next) => {
   let users = await User.find().select("-password").lean().exec();//select every user
@@ -41,7 +41,7 @@ exports.requestotp = asyncHandler(async (req, res, next) => {
     await OTPmodel.create({ type: "changepassword", email: req.user.email, expires, OTP });
     transporter.sendMail({
     to:req.user.email,
-    from:"complaintlodgeriitr@gmail.com",
+    from:process.env.EMAIL,
     subject:"OTP for changing password",
     text:"Hello "+req.user.fullname+",\nhere is the OTP for changing your account password\n"+OTP+"\n\nThis OTP will expire in 2 hours\nThis is system generated mail.So kindly do not reply.\n\nRegards\n CLTIITR",
     }).then(()=>{
@@ -68,9 +68,9 @@ exports.changePassword = asyncHandler(async (req, res, next) => {
       statusCode:400
     })
   }
-  //console.log(req.body);
+  ////console.log(req.body);
   const otpif = await OTPmodel.findOne({ email: req.user.email, type: "changepassword", OTP: otp});
-  //console.log(req.user.email,otp);  
+  ////console.log(req.user.email,otp);  
   if (otpif) {
     const user = await User.findOne({email:req.user.email});
     const tempid = generateOTP(16); 
@@ -112,6 +112,7 @@ exports.getUser = asyncHandler(async (req, res, next) => {
       message:"no user found"
     })
   }
+  //console
   setTimeout(async function () {
     if (user._id.toString() === req.user.id) {
       user = await User.findOne({ username: req.params.username })
@@ -156,14 +157,14 @@ exports.getUser = asyncHandler(async (req, res, next) => {
       });
     }
     else {
-      console.log(user.posts);
+      //console.log(user.posts);
       user.posts = user.posts.filter((post) => {
         return req.user.posts.includes(post._id) || post.accessibility.length == 0 || (post.accessibility.length > 0 && post.accessibility.includes(req.user.username));
       })
       user.posts = user.posts.sort(function(a,b){return new Date(b.createdAt) - new Date(a.createdAt)});
       user.postCount = user.posts.length;
       //delete user.posts["user"];
-      console.log(user.posts);
+      //console.log(user.posts);
 
     }
 
@@ -188,24 +189,26 @@ exports.getUser = asyncHandler(async (req, res, next) => {
       user.isFollowing = true;
     }
     user.followers = user.followers.sort(function(a,b){return new Date(b.createdAt) - new Date(a.createdAt)});
+    user.followerCount = user.followers.length;
+    user.followingCount = user.following.length;
     user.following = user.following.sort(function(a,b){return new Date(b.createdAt) - new Date(a.createdAt)});
     user.taggedComplaints = user.taggedComplaints.sort(function(a,b){return new Date(b.createdAt) - new Date(a.createdAt)});
 
     user.isMe = req.user.id === user._id.toString();
     
-    //console.log("\n\n\nreq.user",user);
+    ////console.log("\n\n\nreq.user",user);
     res.status(200).json({ success: true, data: user });
   }, 500)
 });
 exports.sendNotice = asyncHandler(async (req, res, next) => {
-  //////console.log(req.notices);
+  ////////console.log(req.notices);
   if (req.user) {
     Notification.find({}).sort({ createdAt: -1 }).then((notices) => {
-      //////console.log(notices);
+      ////////console.log(notices);
       notices = notices.filter(function (notice) {
         return notice.receiver.includes(req.user.id) || notice.receiver.includes(req.user.username);
       })
-      ////console.log(notices);
+      //////console.log(notices);
       res.status(200).json({ success: true, notices });
     })
   }
@@ -235,10 +238,9 @@ exports.follow = asyncHandler(async (req, res, next) => {
 
   await User.findByIdAndUpdate(req.params.id, {
     $push: { followers: req.user.id },
-    $inc: { followerCount: 1 },
-    $inc:{noticeCount:1},
+    $inc: { followerCount: 1 },    
   });
-  const noti = await Notification.create({
+  await Notification.create({
     sender: req.user.id,
     receiver: req.params.id,
     avatar: req.user.avatar,
@@ -247,8 +249,7 @@ exports.follow = asyncHandler(async (req, res, next) => {
   })
   await User.findByIdAndUpdate(req.user.id, {
     $push: { following: req.params.id },
-    $inc: { followingCount: 1 },
-    $push: { unseennotice: noti._id },
+    $inc: { followingCount: 1 },    
   });
 
   res.status(200).json({ success: true, data: {}, notices: req.notices });
@@ -267,7 +268,7 @@ exports.chatList = asyncHandler(async (req, res, next) => {
   
   const data = [];
   rooms.forEach((room)=>{
-    //console.log("\n\n\n\n\n\n\n\n",room);
+    ////console.log("\n\n\n\n\n\n\n\n",room);
     data.push({avatar:room.participants.filter((user)=>user._id.toString()!=req.user.id)[0].avatar,username:room.participants.filter((user)=>user._id.toString()!=req.user.id)[0].username,lastmessage:room.messages[room.messages.length-1].text,timeSince:room.messages[room.messages.length-1].createdAt,uri:"/chat/t/"+room.name,id:room._id});
   })
 res.status(200).json({success:true,data:data});
@@ -296,10 +297,10 @@ exports.unfollow = asyncHandler(async (req, res, next) => {
   //remove both to their friend list
   await User.findByIdAndUpdate(req.params.id, {
     $pull: { followers: req.user.id },
-    $inc: { followerCount: -1 },
-    $pull:{unseennotice:noti._id},
+    $inc: { followerCount: -1 },    
   });
-  await noti.remove();
+  if(noti)
+    await noti.remove();
   await User.findByIdAndUpdate(req.user.id, {
     $pull: { following: req.params.id },
     $inc: { followingCount: -1 },
@@ -309,7 +310,7 @@ exports.unfollow = asyncHandler(async (req, res, next) => {
 });
 
 exports.publicfeed = asyncHandler(async (req, res, next) => {
-  console.log(req.user);
+  //console.log(req.user);
 
   let posts = await Post.find({})
     .populate({
@@ -321,11 +322,11 @@ exports.publicfeed = asyncHandler(async (req, res, next) => {
     .sort("-createdAt")
     .lean()
     .exec();
-  ////console.log(posts);
+  //////console.log(posts);
   posts = posts.filter(function (post) {
     return post.accessibility.includes(req.user.username) || !post.isPrivate||req.user.posts.includes(post._id);
   });
-  //console.log(posts);
+  ////console.log(posts);
   posts.forEach((post) => {
     // had the loggedin user liked the post
     post.isLiked = false;
@@ -368,7 +369,7 @@ exports.searchUser = asyncHandler(async (req, res, next) => {
   const regex = new RegExp(req.params.reg, "i");
 
   //let users = await User.find({ username: regex});
-  User.find({ fullname: regex }).select("username fullname avatar").then((data) => {
+  User.find({$or:[{fullname: regex},{username:regex}]}).select("username fullname avatar").then((data) => {
     res.status(200).json({ success: true, notices: req.notices, data });
   });
   //let searchresult = users.concat(users2); 

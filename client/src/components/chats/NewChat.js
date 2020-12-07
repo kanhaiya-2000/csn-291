@@ -3,13 +3,22 @@ import React ,{useState} from "react";
 import { useHistory} from "react-router-dom";
 import styled from "styled-components";
 import Avatar from "../../styles/Avatar";
-import Loader from "../utility/Loader";
+//import Loader from "../utility/Loader";
 import { logout } from "../home/Home";
 import {BackIcon} from "../../Icons";
 import Placeholder from "../utility/Placeholder";
 import Modify from "../../hooks/Modify";
 import { toast } from "react-toastify";
+import Skeleton, { SkeletonTheme } from "react-loading-skeleton";
+import { ThemeContext } from "../../context/ThemeContext";
 
+const LoaderComponent = ()=>{
+    return <div style={{cursor:"pointer"}}
+    className="userComponent">
+      <div className="avatar"><Skeleton circle={true} width={50} height={50}/></div><div className="userinfo"><div className="username"><Skeleton width={100}/></div> <div className="fullname"><Skeleton width={130}/></div>
+      </div>
+  </div> 
+}
 const NewChatPage = styled.div`
 .chatheader{
     top:0px;
@@ -99,6 +108,7 @@ const NewChat = () => {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [err, setErr] = useState("");
+    const {theme} = React.useContext(ThemeContext);
     const inp = Modify("");
     const history = useHistory();
     React.useEffect(() => {
@@ -130,7 +140,19 @@ const NewChat = () => {
     })
     }
     if (loading)
-        return <Loader />
+        return <SkeletonTheme color={theme.skeleton}><NewChatPage>
+        <div className="results">
+                <LoaderComponent/>
+                <LoaderComponent/>
+                <LoaderComponent/>
+                <LoaderComponent/>
+                <LoaderComponent/>
+                <LoaderComponent/>
+                <LoaderComponent/>
+                <LoaderComponent/>                        
+                </div>
+    </NewChatPage>
+    </SkeletonTheme>
     if (err)
         return <Placeholder text={err} title="unable to load page" />
     if(users.length===0)

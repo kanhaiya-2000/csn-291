@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { useHistory } from "react-router-dom";
 import styled from "styled-components";
 import Avatar from "../../styles/Avatar";
-import Loader from "../utility/Loader";
+//import Loader from "../utility/Loader";
 import { logout } from "../home/Home";
 import { connect, timeSince } from "../../utils/fetchdata";
 import Placeholder from "../utility/Placeholder";
@@ -10,7 +10,8 @@ import { BackIcon, NewmsgIcon } from "../../Icons";
 //import io from "Socket.io-client";
 import { MessageRoom } from "./Mainchat";
 import { SocketContext } from "../../context/SocketContext";
-
+import Skeleton, { SkeletonTheme } from 'react-loading-skeleton';
+import {ThemeContext} from "../../context/ThemeContext";
 
 
 export const ChatWrapper = styled.div`
@@ -149,25 +150,92 @@ svg[aria-label="Back"]{
 
 
 `;
-
-export const ChatHeader = ({history})=>{
-    return <div className="chatheader">
-    <div className="backbtn" onClick={() => history.push('/')}><BackIcon /></div>
-    <h3 className="banner">Messages</h3>
-    <div className="newmsg" onClick={() => history.push('/chat/new')}><NewmsgIcon/></div>
+export const ChatListLoader = ({color})=>{
+    return <SkeletonTheme color={color}>   
+     <ChatWrapper>
+     <div className="chatcomponent">
+    <div className="chatavatar">
+        <Skeleton circle={true} height={50} width={50} />
+    </div>
+    <div className="nextinfo">
+        <div className="username"><Skeleton width={80} height={20}/></div>
+        <div className="lastmessage-parent">
+            <div className="lastmessage"><Skeleton width={140} height={10}/></div>
+            <div className="since"><Skeleton width={10}/>
+        </div>
+    </div>
 </div>
+</div><div className="chatcomponent">
+    <div className="chatavatar">
+        <Skeleton circle={true} height={50} width={50} />
+    </div>
+    <div className="nextinfo">
+        <div className="username"><Skeleton width={80} height={20}/></div>
+        <div className="lastmessage-parent">
+            <div className="lastmessage"><Skeleton width={140} height={10}/></div>
+            <div className="since"><Skeleton width={10}/>
+        </div>
+    </div>
+</div>
+</div><div className="chatcomponent">
+    <div className="chatavatar">
+        <Skeleton circle={true} height={50} width={50} />
+    </div>
+    <div className="nextinfo">
+        <div className="username"><Skeleton width={80} height={20}/></div>
+        <div className="lastmessage-parent">
+            <div className="lastmessage"><Skeleton width={140} height={10}/></div>
+            <div className="since"><Skeleton width={10}/>
+        </div>
+    </div>
+</div>
+</div><div className="chatcomponent">
+    <div className="chatavatar">
+        <Skeleton circle={true} height={50} width={50} />
+    </div>
+    <div className="nextinfo">
+        <div className="username"><Skeleton width={80} height={20}/></div>
+        <div className="lastmessage-parent">
+            <div className="lastmessage"><Skeleton width={140} height={10}/></div>
+            <div className="since"><Skeleton width={10}/>
+        </div>
+    </div>
+</div>
+</div><div className="chatcomponent">
+    <div className="chatavatar">
+        <Skeleton circle={true} height={50} width={50} />
+    </div>
+    <div className="nextinfo">
+        <div className="username"><Skeleton width={80} height={20}/></div>
+        <div className="lastmessage-parent">
+            <div className="lastmessage"><Skeleton width={140} height={10}/></div>
+            <div className="since"><Skeleton width={10}/>
+        </div>
+    </div>
+</div>
+</div>
+</ChatWrapper>
+</SkeletonTheme>
+}
+export const ChatHeader = ({ history }) => {
+    return <div className="chatheader">
+        <div className="backbtn" onClick={() => history.push('/')}><BackIcon /></div>
+        <h3 className="banner">Messages</h3>
+        <div className="newmsg" onClick={() => history.push('/chat/new')}><NewmsgIcon /></div>
+    </div>
 }
 const Homechat = () => {
     const [users, setUsers] = useState([]);
     const [err, showErr] = useState("");
-    const [mobile,setIsMobile] = useState(false);
+    const [mobile, setIsMobile] = useState(false);
     const [loading, setLoading] = useState(true);
-    const {Socket,setSocket} = useContext(SocketContext);
-    
+    const { Socket, setSocket } = useContext(SocketContext);
+    const {theme} = useContext(ThemeContext);
+    const color = theme.skeleton;
     const token = localStorage.getItem('accesstoken');
     const history = useHistory();
     const makeSocketConnection = () => {
-        if (token && !Socket) {            
+        if (token && !Socket) {
             Socket.on("connect", () => {
                 setSocket(Socket);
                 //console.log(Messages);
@@ -186,7 +254,7 @@ const Homechat = () => {
             document.getElementsByTagName('nav')[0].style.display = "none";
             document.getElementsByClassName('mobile')[0].style.display = "none";
         }
-        makeSocketConnection();        
+        makeSocketConnection();
         connect('/user/chat', { method: "POST" }).then((chats) => {
             setUsers(chats.data);
             console.log(chats.data);
@@ -198,51 +266,52 @@ const Homechat = () => {
         })
         return () => {
             if (!window.location.toString().includes('chat'))
-                window.location.reload();                
-                //Socket&&Socket.disconnect();
+                window.location.reload();
+            //Socket&&Socket.disconnect();
         }
     }, [setLoading, showErr]);
-    useEffect(()=>{        
-        Socket&&Socket.on('msg',function(data){
-            if(document.getElementById(data.roomid)){
+    useEffect(() => {
+        Socket && Socket.on('msg', function (data) {
+            if (document.getElementById(data.roomid)) {
                 document.getElementById(data.roomid).textContent = data.text;
-                document.getElementById(data.roomid).style.fontWeight="bold";
+                document.getElementById(data.roomid).style.fontWeight = "bold";
                 document.getElementById(data.roomid).style.color = "green";
-                document.getElementById(data.roomid).nextElementSibling.textContent = timeSince(data.createdAt,true);
+                document.getElementById(data.roomid).nextElementSibling.textContent = timeSince(data.createdAt, true);
             }
-            else{
+            else {
                 console.log('requesting verification')
-                Socket.emit('requestverification',data.roomid);
+                Socket.emit('requestverification', data.roomid);
             }
-            
+
             //console.log(data);
         });
-        
-        Socket&&Socket.on('deletingmsg',function(data){
-            console.log("del ",data)
+
+        Socket && Socket.on('deletingmsg', function (data) {
+            console.log("del ", data)
         })
-        return ()=>{
-            if(Socket){
+        return () => {
+            if (Socket) {
                 Socket.off('deletingmsg');
                 Socket.off('connect');
                 Socket.off('disconnect');
                 Socket.off('msg');
-                }
+            }
         }
-    },[Socket])
-    useEffect(()=>{
-        Socket&&Socket.on('addnewlist',function(data){
-            console.log('here'+JSON.stringify(data));
-            if(!document.getElementById(data.id))
-                setUsers([data,...users]);
+    }, [Socket])
+    useEffect(() => {
+        Socket && Socket.on('addnewlist', function (data) {
+            console.log('here' + JSON.stringify(data));
+            if (!document.getElementById(data.id))
+                setUsers([data, ...users]);
         });
-        return ()=>{
-            if(Socket)
+        return () => {
+            if (Socket)
                 Socket.off('addnewlist')
         }
-    },[users,Socket])
+    }, [users, Socket])
     if (loading) {
-        return <Loader />;
+        return  <ChatListLoader color={color}/>            
+       
     }
     if (err) {
         return <Placeholder
@@ -250,58 +319,59 @@ const Homechat = () => {
             text={err}
         />
     }
-    if(users.length==0){
-        return(
+    if (users.length === 0) {
+        return (
             <>
-            <ChatWrapper>
-            <ChatHeader history={history}/>
-            <Placeholder
-                title="Start a new chat"
-                text="Your chat is private"
-                icon="privateicon"
-            />
-            </ChatWrapper>
-            {!mobile&&<MessageRoom>
-                <div className="intro" onClick={()=>history.push('/chat/new')}>
-                <NewmsgIcon style={{transform:"scale(2)"}} />                
+                <ChatWrapper>
+                    <ChatHeader history={history} />
+                    <Placeholder
+                        title="Start a new chat"
+                        text="Your chat is private"
+                        icon="privateicon"
+                    />
+                </ChatWrapper>
+                {!mobile && <MessageRoom>
+                    <div className="intro" onClick={() => history.push('/chat/new')}>
+                        <NewmsgIcon style={{ transform: "scale(2)" }} />
                         <div className="text">Start a new Conversation</div>
                     </div>
                 </MessageRoom>}
-                </>
+            </>
         )
     }
-    return( <>
+    return (<>
         <ChatWrapper>
-            <ChatHeader history={history}/>           
-                {
-                    
-                        users.length > 0 && (
-                            users.map((user) => {
-                                return (
-                                    <div className="chatcomponent" onClick={() => history.push(`${user.uri}`)} key={user.id} id={user.id}>
-                                        <div className="chatavatar">
-                                            <Avatar lg src={user?.avatar} />
-                                        </div>
-                                        <div className="nextinfo">
-                                            <div className="username">{user.username}</div>
-                                            <div className="lastmessage-parent">
-                                                <div className="lastmessage" id={user?.uri.split("/t/")[1]}>{user?.lastmessage}</div>
-                                                <div className="since">{user.timeSince ? timeSince(user.timeSince,true) : ""}</div>
-                                            </div>
-                                        </div>
+
+            <ChatHeader history={history} />
+            {
+
+                users.length > 0 && (
+                    users.map((user) => {
+                        return (
+                            <div className="chatcomponent" onClick={() => history.push(`${user.uri}`)} key={user.id} id={user.id}>
+                                <div className="chatavatar">
+                                    <Avatar lg src={user?.avatar} />
+                                </div>
+                                <div className="nextinfo">
+                                    <div className="username">{user.username}</div>
+                                    <div className="lastmessage-parent">
+                                        <div className="lastmessage" id={user?.uri.split("/t/")[1]}>{user?.lastmessage}</div>
+                                        <div className="since">{user.timeSince ? timeSince(user.timeSince, true) : ""}</div>
                                     </div>
-                                )
-                            }))}
-                          
+                                </div>
+                            </div>
+                        )
+                    }))}
+
 
         </ChatWrapper>
-        {!mobile&&<MessageRoom>
-            <div className="intro" onClick={()=>history.push('/chat/new')}>
-            <NewmsgIcon style={{transform:"scale(2)"}} />                
-                    <div className="text">Start a new Conversation</div>
-                </div>
-            </MessageRoom>}
-        </>
+        {!mobile && <MessageRoom>
+            <div className="intro" onClick={() => history.push('/chat/new')}>
+                <NewmsgIcon style={{ transform: "scale(2)" }} />
+                <div className="text">Start a new Conversation</div>
+            </div>
+        </MessageRoom>}
+    </>
     )
 
 }

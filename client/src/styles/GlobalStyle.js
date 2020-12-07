@@ -69,6 +69,10 @@ const GlobalStyle = createGlobalStyle`
 	h1, h2, h3, h4, h5, h6 {
 		font-weight: normal;
 	}
+	svg[aria-label="loader"]{
+		width:60px !important;
+		height:60px !important;
+	}
 	a {
 		text-decoration: none;
 		cursor: pointer;

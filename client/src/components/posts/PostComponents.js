@@ -15,8 +15,10 @@ import { connect ,timeSince} from "../../utils/fetchdata";
 import {ThemeContext} from "../../context/ThemeContext";
 import { MoreIcon, CommentIcon, InboxIcon ,TickIcon,PrivateIcon} from "../../Icons";
 import {logout} from "../home/Home";
-
-
+import Skeleton from "react-loading-skeleton";
+import LazyLoad from "react-lazyload";
+import def from "../../assets/default.jpg";
+import Loader from "../../assets/loader2.gif";
 export const ModalContentWrapper = styled.div`
   width: 300px;
   display: flex;
@@ -69,6 +71,17 @@ export const PostWrapper = styled.div`
     justify-content: space-between;
     align-items: center;
   }
+  .loadpost{
+    position:relative !important;
+  }
+  .pointer2{
+   margin-top:10px;
+   margin-left:20px;
+   position:relative;
+  }
+  #pointer2{
+    margin-left:5px;
+  }
   .post-header {
     display: flex;
     align-items: center;
@@ -109,6 +122,7 @@ export const PostWrapper = styled.div`
     color: ${(props) => props.theme.secondaryColor};
     cursor: pointer;
   }
+  
   .submit-cmnt{
     color:#3a3aea;
     font-weight:bold;
@@ -146,7 +160,7 @@ const PostComponents = ({ post }) => {
   const history = useHistory();
   const {theme} = useContext(ThemeContext);
   const [showModal, setShowModal] = useState(false);
-  
+  const [loaderr,setLoadErr] = useState(false);
   const closeModal = () => {
     setShowModal(false);    
   }
@@ -154,11 +168,17 @@ const PostComponents = ({ post }) => {
     return toast.success("This is a private complaint");
   }
   const [newComments, setNewComments] = useState([]);
-  const [likesState, setLikes] = useState(post.likesCount);
-
+  const [likesState, setLikes] = useState(post?.likesCount);
+  const errorhandle = (id)=>{
+    document.getElementById(id).src=Loader;
+    document.getElementById(id).style.filter = `invert(${theme.skeleton==="#222"?1:0})`;
+    if(!loaderr){
+      toast.error("Double click/tap to reload post image");
+      setLoadErr(true);
+    }
+  }
   const incLikes = () => setLikes(likesState + 1);
   const decLikes = () => setLikes(likesState - 1);
-  
   const handleAddComment = () => {
     if(!comment.value){
       return;
@@ -173,18 +193,139 @@ const PostComponents = ({ post }) => {
       comment.setValue("");
     
   };
+  if(!post){
+    return <PostWrapper>
+    <div className="post-header-wrapper">
+      <div className="post-header">      
+        <Skeleton circle={true} className={"pointer2"} bottom={-3} width={32} height={32}/>      
+        
+          <Skeleton className={"pointer2"} width={80} height={20} id={"pointer"}/>          
+        
+      </div>
 
+      
+    </div>
+    <Skeleton className={"post-img loadpost"} height={400}/>
+    <div className="post-header-wrapper">
+      <div className="post-header">      
+        <Skeleton circle={true} className={"pointer2"} width={32} height={32}/>      
+        
+          <Skeleton className={"pointer2"} width={80} height={20} id={"pointer"}/>          
+      
+      </div>
+
+      
+    </div>
+    <Skeleton className={"post-img loadpost"}  height={400}/><div className="post-header-wrapper">
+      <div className="post-header">      
+        <Skeleton circle={true} className={"pointer2"} width={32} height={32}/>      
+      
+          <Skeleton className={"pointer2"} width={80} height={20} id={"pointer"}/>          
+        
+      </div>
+
+      
+    </div>
+    <Skeleton className={"post-img loadpost"}  height={400}/><div className="post-header-wrapper">
+      <div className="post-header">      
+        <Skeleton circle={true} className={"pointer2"} width={32} height={32}/>      
+          <Skeleton className={"pointer2"} width={80} height={20} id={"pointer"}/>          
+        
+      </div>
+
+      
+    </div>
+    <Skeleton className={"post-img loadpost"}  height={400}/><div className="post-header-wrapper">
+      <div className="post-header">      
+        <Skeleton circle={true} className={"pointer2"} width={32} height={32}/>      
+      
+          <Skeleton className={"pointer2"} width={80} height={20} id={"pointer"}/>          
+        
+      </div>
+
+      
+    </div>
+    <Skeleton className={"post-img loadpost"}  height={400}/><div className="post-header-wrapper">
+      <div className="post-header">      
+        <Skeleton circle={true} className={"pointer2"} width={32} height={32}/>      
+      
+          <Skeleton className={"pointer2"} width={80} height={20} id={"pointer"}/>          
+        
+      </div>
+
+      
+    </div>
+    <Skeleton className={"post-img loadpost"}  height={400}/><div className="post-header-wrapper">
+      <div className="post-header">      
+        <Skeleton circle={true} className={"pointer2"} width={32} height={32}/>      
+          <Skeleton className={"pointer2"} width={80} height={20} id={"pointer"}/>          
+       
+      </div>
+
+      
+    </div>
+    <Skeleton className={"post-img loadpost"}  height={400}/><div className="post-header-wrapper">
+      <div className="post-header">      
+        <Skeleton circle={true} className={"pointer2"} width={32} height={32}/>      
+          <Skeleton className={"pointer2"} width={80} height={20} id={"pointer"}/>          
+    
+      </div>
+
+      
+    </div>
+    <Skeleton className={"post-img loadpost"}  height={400}/><div className="post-header-wrapper">
+      <div className="post-header">      
+        <Skeleton circle={true} className={"pointer2"} width={32} height={32}/>      
+          <Skeleton className={"pointer2"} width={80} height={20} id={"pointer"}/>          
+        
+      </div>
+
+      
+    </div>
+    <Skeleton className={"post-img loadpost"}  height={400}/><div className="post-header-wrapper">
+      <div className="post-header">      
+        <Skeleton circle={true} className={"pointer2"} width={32} height={32}/>      
+      
+          <Skeleton className={"pointer2"} width={80} height={20} id={"pointer"}/>          
+        
+      </div>
+
+      
+    </div>
+    <Skeleton className={"post-img loadpost"}  height={400}/><div className="post-header-wrapper">
+      <div className="post-header">      
+        <Skeleton circle={true} className={"pointer2"} width={32} height={32}/>      
+          <Skeleton className={"pointer2"} width={80} height={20} id={"pointer"}/>          
+        
+      </div>
+
+      
+    </div>
+    <Skeleton className={"post-img loadpost"}  height={400}/>
+  </PostWrapper>
+  }
   return (
     <PostWrapper>
       <div className="post-header-wrapper">
         <div className="post-header">
         {post.resolved&&<TickIcon/>}
+         <LazyLoad
+         offset={-50}
+          once={true}
+          placeholder={<Avatar
+            className="pointer"
+            src={def}
+            alt="avatar"
+            onClick={() => history.push(`/${post.user?.username}`)}
+          />}>
           <Avatar
             className="pointer"
             src={post.user?.avatar}
+            onError={(e)=>e.src={def}}
             alt="avatar"
             onClick={() => history.push(`/${post.user?.username}`)}
           />
+          </LazyLoad>
         {post.isPrivate&&<PrivateIcon fill={theme.primaryColor} transform={"scale(1.2)"} onClick={showToast}/>}
           <h3
             className="pointer"
@@ -202,10 +343,17 @@ const PostComponents = ({ post }) => {
         
         {<MoreIcon theme={theme} onClick={() => setShowModal(true)} />}
       </div>
+      <LazyLoad
+      offset={-150}
+      once={true}
+      placeholder={<img alt="" className="post-img" src={Loader} style={{filter:`invert(${theme.skeleton==="#222"?1:0})`}}/>}>
       {post.files[0]?
       <img
         className="post-img"
+        id={post._id.toString()}
         src={post.files[0]}
+        onDoubleClick={()=>document.getElementById(post._id.toString()).src=post.files[0]}
+        onError={()=>errorhandle(post._id.toString())}
         alt="post-img"
       />
       :
@@ -216,7 +364,7 @@ const PostComponents = ({ post }) => {
       />
 }
 
-
+</LazyLoad>
       <div className="post-actions">
         <LikePost
           isLiked={post.isLiked}

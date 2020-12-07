@@ -9,6 +9,7 @@ import Comment from "./Comment";
 import Placeholder from "../utility/Placeholder";
 import Avatar from "../../styles/Avatar";
 import Loader from "../utility/Loader";
+import Loaderi from "../../assets/loader2.gif";
 import Modal from "./Modal";
 import { ModalContent } from "./PostComponents";
 import modify from "../../hooks/Modify";
@@ -34,6 +35,9 @@ const Wrapper = styled.div`
   }
   svg[aria-label="saved"]{
     fill: ${(props) => props.theme.primaryColor} !important;
+  }
+  #loader{
+    filter:invert(${(props)=>props.theme.skeleton==='#222'?1:0});
   }
   
   .post-header {
@@ -107,8 +111,7 @@ const Wrapper = styled.div`
     height: 43px;
     width: 100%;
     background: ${(props) => props.theme.bg};
-    border: none;
-    
+    border: none;    
     resize: none;
     padding: 1rem 0 0 1rem;
     font-size: 1rem;
@@ -116,6 +119,7 @@ const Wrapper = styled.div`
     align-self:center;
     margin:auto;
   }
+ 
   @media screen and (max-width: 840px) {
     display: flex;
     flex-direction: column;
@@ -128,6 +132,7 @@ const Wrapper = styled.div`
  }
  .comments {  
   order:5;  
+  height:100%;
   max-height:500px;
 }
 .post-img{
@@ -150,6 +155,12 @@ const Wrapper = styled.div`
    border:1px solid #3333;
    
  }
+  }
+  @media screen and (max-width:840px) and (min-width:700px){
+    .add-comment{
+      position:relative !important;
+      top:0px !important;
+    }
   }
 `;
 
@@ -180,7 +191,6 @@ const Post = () => {
   const [loading, setLoading] = useState(true);
   const [notFound, setnotFound] = useState(false);
   const [post, setPost] = useState({});
-
   const [likesState, setLikes] = useState(0);
   const [commentsState, setComments] = useState([]);
 
@@ -232,7 +242,7 @@ const Post = () => {
       .catch((err) => {err.logout&&logout();setErr("This complain post is non-accessible");setnotFound(true)});
   }, [postId,element]);
 
-  if (!notFound && loading) {
+  if (loading&&!notFound) {
     return <Loader />;
   }
   
@@ -248,11 +258,23 @@ const Post = () => {
   return (
     <Wrapper>
       {post.files[0]?
+      <>
       <img
         className="post-img"
+        id="loader"
+        src={Loaderi}
+        alt="post-img"
+      />
+      <img
+        className="post-img"
+        style={{display:"none"}}
+        onLoadCapture={()=>{document.getElementById('loader').remove();document.getElementById(post._id.toString()).style.display="block"}}
+        onError={()=>toast.error('could not load image')}
+        id={post._id.toString()}
         src={post.files[0]}
         alt="post-img"
       />
+      </>
       :
       <img
         className="post-img-inverted"        

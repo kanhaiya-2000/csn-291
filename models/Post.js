@@ -6,6 +6,10 @@ const PostSchema = new mongoose.Schema({
     ref: "User",
     required: true,
   },
+  reportCount:{
+    type:Number,
+    default:0
+  },
   caption: {
     type: String,
     required: [true, "Enter the caption"],

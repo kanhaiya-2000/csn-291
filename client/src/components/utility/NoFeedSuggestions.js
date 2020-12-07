@@ -7,7 +7,7 @@ import { connect } from "../../utils/fetchdata";
 import Loader from "./Loader";
 import {logout} from "../home/Home";
 
-const Wrapper = styled.div`
+export const Wrapper = styled.div`
   background: ${(props) => props.theme.white};
   border: 1px solid ${(props) => props.theme.borderColor};
   width: 600px;

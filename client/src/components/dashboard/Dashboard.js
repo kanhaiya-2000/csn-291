@@ -44,7 +44,7 @@ const Wrapper = styled.div`
 
 const Dashboard = () => {
   const [tab, setTab] = useState("POSTS");
-  const [errmsg,setErr] = useState("Error in getting data");
+  //const [errmsg,setErr] = useState("Error in getting data");
   
   const { username } = useParams();
   const [dashboard, setdashboard] = useState({});
@@ -59,7 +59,7 @@ const Dashboard = () => {
         setNotFound(false);
         setdashboard(res.data);
       })
-      .catch((err) => {setErr(err.message);setNotFound(true)});
+      .catch((err) => {setNotFound(true)});
   }, [username]);
 
   if (!NotFound && loading) {
@@ -70,7 +70,7 @@ const Dashboard = () => {
     return (
       <Placeholder
         title="Sorry, this page isn't available"
-        text={errmsg}
+        text="Link may be broken or invalid"
       />
     );
   }

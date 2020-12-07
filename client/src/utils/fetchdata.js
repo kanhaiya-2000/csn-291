@@ -53,7 +53,7 @@ export const timeSince = (timestamp,short) => {
     if (body) {
       config.body = JSON.stringify(body);
     }
-  // ${process.env.REACT_APP_BACKEND_URL}${endpoint}
+  // https://complaintlodger.herokuapp.com${endpoint}
     return fetch(`${process.env.REACT_APP_BACKEND_URL}${endpoint}`, config).then(
       async (res) => {
         const data = await res.json();
@@ -69,10 +69,12 @@ export const timeSince = (timestamp,short) => {
   
   export const uploadImage = (file) => {
     const data = new FormData();
+    console.log(file.size);
     data.append("file", file);
-    //Add your preset here....   data.append("upload_preset", "<YOUR_UPLOAD_PRESET");    
+    data.append("upload_preset", "complaintlodgeriitr");
+    
   
-    return fetch(`${process.env.REACT_APP_UPLOAD_URL}`, {
+    return fetch(process.env.REACT_APP_UPLOAD_URL, {
       method: "POST",
       body: data,
     }).then((res) => res.json());

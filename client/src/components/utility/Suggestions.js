@@ -5,6 +5,7 @@ import Follow from "./Follow";
 import Avatar from "../../styles/Avatar";
 import { UserContext } from "../../context/UserContext";
 import { connect } from "../../utils/fetchdata";
+import Skeleton from "react-loading-skeleton";
 
 const Wrapper = styled.div`
   width: 280px;
@@ -62,16 +63,16 @@ export const UserCard = ({ user,noDiv }) => {
   return (
     <StyledUserCard>
     <div style={{width:"44px",height:"44px",marginRight:"1rem"}}>
-      <Avatar
+      {user?<Avatar
         className="pointer"
         onClick={() => history.push(`/${user.username}`)}
         lg
         src={user.avatar}
         alt="avatar"
-      />
+      />:<Skeleton width={44} height={44} circle={true} className={"pointer"}/>}
       </div>
 
-      <div className="user-info">
+      {user?<div className="user-info">
         <h3
           className="pointer"
           onClick={() => history.push(`/${user.username}`)}
@@ -79,22 +80,29 @@ export const UserCard = ({ user,noDiv }) => {
           {user.username}
         </h3>
         <span>{user.fullname}</span>
-      </div>
+      </div>:<div className="user-info">
+        <h3
+          className="pointer"
+        >
+          <Skeleton width={80} height={15}></Skeleton>
+        </h3>
+        <span><Skeleton width={110} height={20}></Skeleton></span>
+      </div>}
     </StyledUserCard>
   );
 }
   else{
     return (
     <StyledUserCard>    
-      <Avatar
+      {user?<Avatar
         className="pointer"
         onClick={() => history.push(`/${user.username}`)}
         lg
         src={user.avatar}
         alt="avatar"
-      />     
+      />:<Skeleton width={44} height={44} circle={true} className={"pointer"}/>}     
 
-      <div className="user-info">
+      {user?<div className="user-info">
         <h3
           className="pointer"
           onClick={() => history.push(`/${user.username}`)}
@@ -102,7 +110,14 @@ export const UserCard = ({ user,noDiv }) => {
           {user.username}
         </h3>
         <span>{user.fullname}</span>
-      </div>
+      </div>:<div className="user-info">
+        <h3
+          className="pointer"
+        >
+          <Skeleton width={80} height={15}></Skeleton>
+        </h3>
+        <span><Skeleton width={90} height={15}></Skeleton></span>
+      </div>}
     </StyledUserCard>
   );
   }
@@ -110,14 +125,15 @@ export const UserCard = ({ user,noDiv }) => {
 
 const Suggestions = () => {
   const { user } = useContext(UserContext);
-  const [users, setUsers] = useState([]);
-
+  const [loading,setLoading] = useState(true);
+  const [users, setUsers] = useState([null,null,null,null]);
   useEffect(() => {
     connect("/user").then((response) => {
       setUsers(response.data.filter((user) => !user.isFollowing));
+      setLoading(false);
     });
   }, []);
-
+ 
   return (
     <Wrapper>
       <UserCard user={user} noDiv={true} />
@@ -125,12 +141,12 @@ const Suggestions = () => {
       <div className="suggestions">
         <h3>Suggestions For You</h3>
         {users.slice(0, 4).map((user) => (
-          <div key={user.username} className="suggestions-usercard">
+          <div className="suggestions-usercard">
             <UserCard user={user} noDiv={false}/>
-            <Follow nobtn isFollowing={user.isFollowing} userId={user._id} />
+            {user&&<Follow nobtn isFollowing={user?.isFollowing} userId={user._id} />}
           </div>
         ))}
-        {users.length === 0 && <p>Right now, there's no suggestions for you</p>}
+        {users.length === 0 &&!loading&& <p>Right now, there's no suggestions for you</p>}
       </div>
     </Wrapper>
   );
