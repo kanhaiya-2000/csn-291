@@ -29,21 +29,21 @@ REACT_APP_BACKEND_URL="http://localhost:55000"  //here take care of your operati
 REACT_APP_UPLOAD_URL="https://api.cloudinary.com/v1_1/<YOUR_CLOUD_NAME>/image/upload"
 ```
 
-head over to [cloudinary.com](https://cloudinary.com) to get your cloud uri.
+head over to [cloudinary.com](https://cloudinary.com) to get your cloud url.
 
 content of server .env (To be added at the main route)
 
 ```javascript
 JWT_SECRET="<ANY_STRING>"
+EMAIL="<ADD_YOUR_NEW_EMAIL_ID>"
+EMAIL_PASS="<ADD_PASSWORD>"
 JWT_EXPIRE=30d||whatever you wish
-MONGOURI="mongodb+srv://<YOUR_MONGO_URI>?retryWrites=true&w=majority"
+MONGOURI=<YOUR_MONGO_URI>" 
 ```
 Finally,create a new gmail account and configure it to allow for less secure app<br/>
+Add the email-id and password in .env file for server
 
-Replace user and pass fields in the files <br/>[auth.js](/controllers/auth.js) and [user.js](/controllers/user.js)<br/>
-with your gmail address and its password<br/>The existing password has been changed so dont use it.
-
-After this head over to the main route and <br/>
+After this navigate to the main route and <br/>
 run each command in 2 separate windows of terminal 
 
 ```bash
@@ -52,5 +52,5 @@ npm run dev
 ```
 
 After few seconds,you will be automatically taken to localhost:3000.<br/>
-You can now login using your gsuite email id.
+You can now login/signup using your gsuite email id.
 
