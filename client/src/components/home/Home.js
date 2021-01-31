@@ -57,7 +57,7 @@ if(loading)
       <div className="home">
        <PostComponents/>
       </div>
-      <Suggestions />
+      <Suggestions noLoad={true}/>
       </>
     </Wrapper>
     </SkeletonTheme>

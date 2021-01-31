@@ -148,7 +148,7 @@ const CreateNew = () => {
   }
   const handleSubmitPost = () => {
     if (!detail.value) {
-      return toast.error("Please add detail of your complain");
+      return toast.error("Please add the detail of your complain");
     }
      if(!postImage){
        return toast.error("please Add a pic");

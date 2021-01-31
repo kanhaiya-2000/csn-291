@@ -74,6 +74,9 @@ export const PostWrapper = styled.div`
   .loadpost{
     position:relative !important;
   }
+  .mb-10{
+    margin-bottom:-10px;
+  }
   .pointer2{
    margin-top:10px;
    margin-left:20px;
@@ -160,7 +163,7 @@ const PostComponents = ({ post }) => {
   const history = useHistory();
   const {theme} = useContext(ThemeContext);
   const [showModal, setShowModal] = useState(false);
-  const [loaderr,setLoadErr] = useState(false);
+  const [loaderr,setLoadErr] = useState(true);
   const closeModal = () => {
     setShowModal(false);    
   }
@@ -172,9 +175,9 @@ const PostComponents = ({ post }) => {
   const errorhandle = (id)=>{
     document.getElementById(id).src=Loader;
     document.getElementById(id).style.filter = `invert(${theme.skeleton==="#222"?1:0})`;
-    if(!loaderr){
+    if(loaderr){
       toast.error("Double click/tap to reload post image");
-      setLoadErr(true);
+      setLoadErr(false);
     }
   }
   const incLikes = () => setLikes(likesState + 1);
@@ -313,14 +316,15 @@ const PostComponents = ({ post }) => {
          offset={-50}
           once={true}
           placeholder={<Avatar
-            className="pointer"
+            className="pointer mb-10"
             src={def}
             alt="avatar"
             onClick={() => history.push(`/${post.user?.username}`)}
           />}>
           <Avatar
-            className="pointer"
+            className="pointer mb-10"
             src={post.user?.avatar}
+            onContextMenu={(e)=>e.preventDefault()}
             onError={(e)=>e.src={def}}
             alt="avatar"
             onClick={() => history.push(`/${post.user?.username}`)}
@@ -352,7 +356,9 @@ const PostComponents = ({ post }) => {
         className="post-img"
         id={post._id.toString()}
         src={post.files[0]}
-        onDoubleClick={()=>document.getElementById(post._id.toString()).src=post.files[0]}
+        style={{filter:"invert(0)"}}
+        onContextMenu={(e)=>e.preventDefault()}
+        onDoubleClick={()=>{document.getElementById(post._id.toString()).src=post.files[0];document.getElementById(post._id.toString()).style.filter="invert(0)"}}
         onError={()=>errorhandle(post._id.toString())}
         alt="post-img"
       />

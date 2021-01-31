@@ -67,6 +67,7 @@ export const UserCard = ({ user,noDiv }) => {
         className="pointer"
         onClick={() => history.push(`/${user.username}`)}
         lg
+        onContextMenu={(e)=>e.preventDefault()}
         src={user.avatar}
         alt="avatar"
       />:<Skeleton width={44} height={44} circle={true} className={"pointer"}/>}
@@ -123,15 +124,17 @@ export const UserCard = ({ user,noDiv }) => {
   }
 };
 
-const Suggestions = () => {
+const Suggestions = ({noLoad}) => {
   const { user } = useContext(UserContext);
   const [loading,setLoading] = useState(true);
   const [users, setUsers] = useState([null,null,null,null]);
   useEffect(() => {
+    if(!noLoad){
     connect("/user").then((response) => {
       setUsers(response.data.filter((user) => !user.isFollowing));
-      setLoading(false);
+      setLoading(false);    
     });
+  }
   }, []);
  
   return (
@@ -141,7 +144,7 @@ const Suggestions = () => {
       <div className="suggestions">
         <h3>Suggestions For You</h3>
         {users.slice(0, 4).map((user) => (
-          <div className="suggestions-usercard">
+          <div className="suggestions-usercard" key={Math.random()}>
             <UserCard user={user} noDiv={false}/>
             {user&&<Follow nobtn isFollowing={user?.isFollowing} userId={user._id} />}
           </div>

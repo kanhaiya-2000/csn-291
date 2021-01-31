@@ -149,7 +149,7 @@ const PostProfilePreview = ({ posts }) => {
           onClick={() => history.push(`/p/${post._id}`)}
         >
           <LazyLoad once={true} offset={-150}
-      placeholder={<img alt="" className="post-img" src={Loader} style={{filter:`invert(${theme.skeleton==="#222"?1:0})`}}/>}><img id={post._id.toString()} onError={()=>errorhandle(post._id.toString())} src={post.files[0]||"https://kkleap.github.io/assets/loaderi.gif"} alt="post" /></LazyLoad>
+      placeholder={<img alt="" className="post-img" src={Loader} style={{filter:`invert(${theme.skeleton==="#222"?1:0})`}}/>}><img onContextMenu={(e)=>e.preventDefault()} id={post._id.toString()} onError={()=>errorhandle(post._id.toString())} src={post.files[0]||"https://kkleap.github.io/assets/loaderi.gif"} alt="post" /></LazyLoad>
           <div className="overlay">
             <div className="overlay-content">
               <span style={{color:"white !important"}}>

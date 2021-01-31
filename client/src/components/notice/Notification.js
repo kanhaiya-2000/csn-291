@@ -10,8 +10,9 @@ import NoticeComponents from './NoticeComponents';
 import { logout } from "../home/Home";
 import Follow from "../utility/Follow";
 import Avatar from "../../styles/Avatar";
-import {SkeletonTheme} from "react-loading-skeleton";
+import { SkeletonTheme } from "react-loading-skeleton";
 import { ThemeContext } from "../../context/ThemeContext";
+import { SocketContext } from "../../context/SocketContext";
 
 const NoticeModal = styled.div`
 width:60%;
@@ -65,22 +66,36 @@ padding:10px 8px;
 const Notification = () => {
     const [Notice, setNotice] = useState([]);
     const [Suggestions, setSuggestions] = useState([]);
+    const { Socket, setSocket } = useContext(SocketContext);
     const [loading, setLoading] = useState(true);
-    const {theme} = useContext(ThemeContext);
+    const { theme } = useContext(ThemeContext);
+    const token = localStorage.getItem('accesstoken');
     const history = useHistory();
+    const makeSocketConnection = () => {
+        if (token && !Socket) {
+            if (Socket.connected)
+                return;
+            Socket.connect();
+            Socket.on("connect", () => {
+                setSocket(Socket);
+            })
+            Socket.on('disconnect', () => {
+                setSocket(null);
+                toast.error('Socket disconnected');
+                setTimeout(makeSocketConnection, 1000);
+            })
+        }
+    };
     useEffect(() => {
+        makeSocketConnection();
         connect('/user/notice', { method: "POST" }).then((res) => {
             setNotice(res.notices);
-            console.log(res.notices);
-            if (res.notices.length>0&&(Number(localStorage.getItem('noticecount')) < res.notices.length ||
-                (Number(localStorage.getItem('noticecount')) === res.notices.length
-                    && localStorage.getItem('lastnotice') !== res.notices[0]._id.toString()))) {
-                toast.success('You have new notices');
-                localStorage.setItem('lastnotice', res.notices[0]._id);
-                localStorage.setItem('noticecount', res.notices.length);
-
+            //console.log(res.notices);            
+            if (Socket && res.unseennotice>0) {
+                Socket.emit('noticeseen', res.notices[0]._id);
+                document.getElementById('noti-wrapper-mobile').style.display = 'none';
+                document.getElementById('noti-wrapper').style.display = 'none';
             }
-
             setLoading(false);
         }).catch(err => {
             err.logout && logout();
@@ -153,7 +168,7 @@ const Notification = () => {
                     </div>
                 </>
             ) : (
-                    <div class="suggestions"> {
+                    <div className="suggestions"> {
                         Suggestions.length > 0 ? (
                             <div className="suggestion-component">
                                 <h3 className="h3" style={{ borderBottom: "1px solid white", paddingBottom: "20px 10px" }}>Suggestions for You</h3>

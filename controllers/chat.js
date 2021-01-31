@@ -9,7 +9,7 @@ exports.getConversationDetail = asyncHandler(async (req, res, next) => {
         select:"owner createdAt text"
     }).populate({
         path:"participants",
-        select:"avatar username fullname bio"
+        select:"avatar username fullname bio unseenmsg"
     });
     if(!chatroom){
         return next({
@@ -30,16 +30,35 @@ exports.getConversationDetail = asyncHandler(async (req, res, next) => {
     const otheruser = chatroom.participants.filter(function(user){
         return user._id.toString()!=req.user.id
     })
+    let isSeen = false;
+    if(messages.length>0)
+        isSeen = messages[messages.length-1].isMine&&otheruser[0].unseenmsg.indexOf(req.params.roomid)==-1;
    // console.log(messages);
-    res.status(200).json({success:true,messages:messages,user:otheruser[0]});
+    res.status(200).json({success:true,messages:messages,user:otheruser[0],roomid:chatroom._id.toString(),unseenmsg:[... new Set(req.user.unseenmsg)].length,unseennotice:req.user.unseennotice.length,newmsgroom:[... new Set(req.user.unseenmsg)],isSeen:isSeen});
 
 });
+exports.giveDetail = asyncHandler(async(req,res,next)=>{
+    if(req.user.id==req.params.id){
+        return next({            
+            statusCode:403,
+            message:"You cannot chat with the same userid"
+        })
+    }
+    const user = await User.findById(req.params.id);
+    if(!user){
+        return next({            
+            statusCode:400,
+            message:"No user found with the given id"
+        })
+    }
+    res.status(200).json({success:true,data:{avatar:user.avatar,name:user.fullname}});
+})
 exports.receiveUser = asyncHandler(async(req,res,next)=>{
     let users = await User.find({}).select("avatar username fullname").lean().exec();
     users = users.filter(function(user){
        return user._id!=req.user.id
     })
-    res.status(200).json({sucess:true,data:users});
+    res.status(200).json({sucess:true,data:users,unseenmsg:[... new Set(req.user.unseenmsg)].length,unseennotice:req.user.unseennotice.length});
 });
 exports.createNew = asyncHandler(async(req,res,next)=>{
     const otheruser = await User.findById(req.params.id);
@@ -52,7 +71,7 @@ exports.createNew = asyncHandler(async(req,res,next)=>{
         })
     }
     if(checkifexist){
-        res.status(200).json({success:true,uri:`/chat/t/${checkifexist.name}`})
+        res.status(200).json({success:true,uri:`/chat/t/${checkifexist.name}`,unseenmsg:[... new Set(req.user.unseenmsg)].length,unseennotice:req.user.unseennotice.length})
     }
     else{
     
@@ -70,5 +89,5 @@ exports.filterUser = asyncHandler(async(req,res,next)=>{
     users = users.filter(function(user){
         return user._id!=req.user.id&&(user.fullname.toLowerCase().includes(text)||user.username.toLowerCase().includes(text));
     })
-    res.status(200).json({sucess:true,data:users});
+    res.status(200).json({sucess:true,data:users,unseenmsg:[... new Set(req.user.unseenmsg)].length,unseennotice:req.user.unseennotice.length});
 })

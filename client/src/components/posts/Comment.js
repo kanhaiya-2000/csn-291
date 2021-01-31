@@ -74,6 +74,7 @@ const longPressEvent = useLongPress(onLongPress, onClick, defaultOptions);
       {!hideavatar && (
         <div>
         <Avatar
+          onContextMenu={(e)=>e.preventDefault()}
           className="pointer"
           onClick={() => history.push(`/${comment.user.username}`)}
           src={comment.user.avatar}
@@ -91,7 +92,7 @@ const longPressEvent = useLongPress(onLongPress, onClick, defaultOptions);
         </span>
         {comment.text}
         
-      </p>{!noTimeStamp&&<span className="secondary">{timeSince(comment.createdAt)} ago</span>}</div>
+      </p>{!noTimeStamp&&<span className="secondary">{timeSince(comment.createdAt,true)}</span>}</div>
      :<div id={comment._id}>
        <p>
        <span
@@ -101,7 +102,7 @@ const longPressEvent = useLongPress(onLongPress, onClick, defaultOptions);
          {comment.user.username}
        </span>
        {comment.text}       
-     </p>{!noTimeStamp&&<span className="secondary">{timeSince(comment.createdAt)} ago</span>}</div>
+     </p>{!noTimeStamp&&<span className="secondary">{timeSince(comment.createdAt,true)}</span>}</div>
      
 }
       

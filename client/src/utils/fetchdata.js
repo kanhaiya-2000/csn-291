@@ -8,9 +8,9 @@ export const timeSince = (timestamp,short) => {
       return !short?interval + " years":interval + "y";
     }
   
-    interval = Math.floor(seconds / 2592000); //make into months
+    interval = Math.floor(seconds / 604800); //make into months
     if (interval > 1) {
-      return !short?interval + " months":interval + "mon";
+      return !short?interval + " weeks":interval + "w";
     }
   
     interval = Math.floor(seconds / 86400); //make into days
@@ -53,12 +53,46 @@ export const timeSince = (timestamp,short) => {
     if (body) {
       config.body = JSON.stringify(body);
     }
-  // https://complaintlodger.herokuapp.com${endpoint}
-    return fetch(`${process.env.REACT_APP_BACKEND_URL}${endpoint}`, config).then(
+  //http://localhost:55000 https://complaintlodger.herokuapp.com
+    return fetch(`https://complaintlodger.herokuapp.com${endpoint}`, config).then(
       async (res) => {
         const data = await res.json();
   
         if (res.ok) {
+         // console.log(data);
+          if(data.unseennotice&&data.unseennotice>0){
+            if(document.getElementById('noti-count')){
+            document.getElementById('noti-count').textContent=data.unseennotice;
+            document.getElementById('noti-wrapper').style.display='flex';
+          }
+            if(document.getElementById('noti-count-mobile')){
+            document.getElementById('noti-count-mobile').textContent=data.unseennotice;            
+            document.getElementById('noti-wrapper-mobile').style.display='flex';
+            }
+          }
+          else{
+            if(document.getElementById('noti-wrapper')){
+              document.getElementById('noti-wrapper').style.display='none';
+            if(document.getElementById('noti-wrapper-mobile'))
+              document.getElementById('noti-wrapper-mobile').style.display='none';
+            }
+          }
+          if(data.unseenmsg&&data.unseenmsg>0){
+            if(document.getElementById('inb-count')){
+            document.getElementById('inb-count').textContent=data.unseenmsg;
+            document.getElementById('inb-wrapper').style.display='flex';
+            }
+            if(document.getElementById('inb-count-mobile')){
+            document.getElementById('inb-count-mobile').textContent=data.unseenmsg;            
+            document.getElementById('inb-wrapper-mobile').style.display='flex';
+            }
+          }
+          else{
+            if(document.getElementById('inb-wrapper'))
+              document.getElementById('inb-wrapper').style.display='none';
+            if(document.getElementById('inb-wrapper-mobile'))
+              document.getElementById('inb-wrapper-mobile').style.display='none';
+          }
           return data;
         } else {
           return Promise.reject(data);
@@ -69,7 +103,7 @@ export const timeSince = (timestamp,short) => {
   
   export const uploadImage = (file) => {
     const data = new FormData();
-    console.log(file.size);
+    console.log("Compressed size--->",file.size,"bytes");
     data.append("file", file);
     data.append("upload_preset", "complaintlodgeriitr");
     

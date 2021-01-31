@@ -112,16 +112,15 @@ const Login = ({ signup ,recover}) => {
     try {
       const { token } = await connect("/auth/login", { body });
       localStorage.setItem("accesstoken", token);
+      
     } catch (err) {
       return toast.error(err.message);
     }
 
     const user = await connect("/auth");
     localStorage.setItem("userdetail", JSON.stringify(user.data));
-    setUser(user.data);
-    toast.success("Login successful");    
-    id.setValue("");
-    password.setValue("");
+    window.location.reload();
+   
   };
 
   return (

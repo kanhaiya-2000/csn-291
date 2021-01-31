@@ -24,6 +24,7 @@ const Wrapper = styled.div`
   .post-info {
     height:550px;
     border: 1px solid ${(props) => props.theme.borderColor};
+    
   }
   .post-header-wrapper {
     display: flex;
@@ -81,8 +82,7 @@ const Wrapper = styled.div`
   .secondary{
     height:40px;
   }
-  .comments {
-    border-bottom: 1.3px solid ${(props) => props.theme.borderColor};
+  .comments {    
     padding: 1rem;
     height:350px;     
     overflow-y: scroll;
@@ -91,6 +91,7 @@ const Wrapper = styled.div`
   @media screen and (min-width:840px){
     .comments {  
       min-height:200px;
+      border-bottom: 1px solid ${(props) => props.theme.borderColor};
     }
   }
   .comments::-webkit-scrollbar {
@@ -101,11 +102,20 @@ const Wrapper = styled.div`
     margin-right: 1rem;
     
   }
+  svg[aria-label="Close"]{
+    margin-right:0px;
+  }
   .post-img-inverted{
     filter:invert(50%);
     width: 100%;
     height: 100%;
     object-fit: cover;
+  }
+  .header-like{
+     position:sticky;
+     top:0px;
+     min-width:300px;
+     background:${(props) => props.theme.bg} !important;     
   }
   textarea {
     height: 43px;
@@ -119,7 +129,10 @@ const Wrapper = styled.div`
     align-self:center;
     margin:auto;
   }
- 
+ @media screen and (max-width:700px){
+   .comments{
+      padding-top:0 !important;	
+ }
   @media screen and (max-width: 840px) {
     display: flex;
     flex-direction: column;
@@ -129,15 +142,17 @@ const Wrapper = styled.div`
    display:flex;
    height:100%;
    flex-direction:column;
+   border-bottom:0;
  }
  .comments {  
   order:5;  
   height:100%;
+  
   max-height:500px;
 }
 .post-img{
   height:100%;
-  padding-top:30px;
+  padding-top:18px;
 }
 
 .post-actions-state{
@@ -152,6 +167,8 @@ const Wrapper = styled.div`
    position:fixed;
    top:40px;
    width:100%;
+   left:-3px;
+   width:calc(100% + 3px);
    border:1px solid #3333;
    
  }
@@ -271,6 +288,7 @@ const Post = () => {
         onLoadCapture={()=>{document.getElementById('loader').remove();document.getElementById(post._id.toString()).style.display="block"}}
         onError={()=>toast.error('could not load image')}
         id={post._id.toString()}
+        onContextMenu={(e)=>e.preventDefault()}
         src={post.files[0]}
         alt="post-img"
       />
@@ -289,6 +307,7 @@ const Post = () => {
             <Avatar
               onClick={() => history.push(`/${post.user?.username}`)}
               className="pointer avatar"
+              onContextMenu={(e)=>e.preventDefault()}
               src={post.user?.avatar}
               alt="avatar"
             />
@@ -317,9 +336,9 @@ const Post = () => {
           {
           showlikes&&(
             <>
-            <Modal>
-            <div style={{ maxHeight: "400px", overflowY: "auto" }}>
-            <div style={modalHeaderStyle}>
+            <Modal>            
+            <div style={{ maxHeight: "400px", overflowX: "hidden" }}>
+            <div style={modalHeaderStyle} className="header-like">
               <h3>Liked By</h3>
               <CloseIcon onClick={closeModal} theme={theme} />
             </div>
@@ -328,6 +347,7 @@ const Post = () => {
                 <div className="profile-info">
                   <img
                     className="pointer"
+                    onContextMenu={(e)=>e.preventDefault()}
                     onClick={() => {
                       closeModal();
                       history.push(`/${user.username}`);
@@ -356,8 +376,8 @@ const Post = () => {
           </Modal>
           <MobileWrapper>
             <Modal>
-            <div style={{ maxHeight: "400px", overflowY: "auto" }}>
-            <div style={modalHeaderStyle}>
+            <div style={{ maxHeight: "400px", overflowX: "hidden" }}>
+            <div style={modalHeaderStyle} className="header-like">
               <h3>Liked By</h3>
               <CloseIcon onClick={closeModal} theme={theme} />
             </div>
@@ -370,6 +390,7 @@ const Post = () => {
                       closeModal();
                       history.push(`/${user.username}`);
                     }}
+                    onContextMenu={(e)=>e.preventDefault()}
                     src={user.avatar}
                     alt="avatar"
                   />
@@ -399,6 +420,7 @@ const Post = () => {
         </div>
 
         <div className="comments">
+        <Comment noTimeStamp={false} key="12" postId={post._id} comment={{createdAt:post.createdAt,_id:"2425",text:post.caption,user:{username:post.user.username,avatar:post.user.avatar}}}  />
           {commentsState.map((comment) => (
             <Comment noTimeStamp={false} key={comment._id} postId={post._id} comment={comment} commentsStateF={commentsStateF} />
           ))}

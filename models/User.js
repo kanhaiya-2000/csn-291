@@ -18,6 +18,8 @@ const userSchema = new schema({
     trim: true,
     unique: true,
   },
+  unseennotice:[{ type: mongoose.Schema.ObjectId}],
+  unseenmsg:[{ type: String}],
   email: {
     type: String,
     required: [true, "Your email"],

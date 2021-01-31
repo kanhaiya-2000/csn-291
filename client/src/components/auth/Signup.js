@@ -104,7 +104,7 @@ const Signup = ({ login }) => {
 
     try {
       const { token } = await connect("/auth/signup", { body });
-      localStorage.setItem("accesstoken", token);
+      localStorage.setItem("accesstoken", token);      
     } catch (err) {
       return toast.error(err.message);
     }
@@ -112,12 +112,7 @@ const Signup = ({ login }) => {
     const user = await connect("/auth");
     setUser(user.data);
     localStorage.setItem("userdetail", JSON.stringify(user.data));
-
-    fullname.setValue("");
-    username.setValue("");
-    password.setValue("");
-    email.setValue("");
-    OTP.setValue("");
+    window.location.reload();
   };
 
   return (

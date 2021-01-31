@@ -1,5 +1,5 @@
 import React,{Suspense} from "react";
-import { BrowserRouter as Router, Route, Switch } from "react-router-dom";
+import { BrowserRouter as Router, Redirect, Route, Switch } from "react-router-dom";
 // main route
 import Nav from "./components/utility/Nav";
 import Container from "./styles/Container";
@@ -16,6 +16,9 @@ import ReportPost from "./components/posts/ReportPost";
 import Homechat from "./components/chats/Homechat";
 import Mainchat from "./components/chats/Mainchat";
 import NewChat from "./components/chats/NewChat";
+import VideoChat from "./components/chats/VideoChat";
+import VoiceChat from "./components/chats/VoiceChat";
+
 
 const Routing = () => {
   
@@ -31,7 +34,13 @@ const Routing = () => {
           <Route
             path="/chat/t/:roomid" 
             component={(props)=><Mainchat {...props} key={window.location.pathname}/>}/>
-            <Route path="/chat/new" component={NewChat} />
+          <Route path="/chat/new" component={NewChat} />
+          <Route path="/chat/videocall/:uid">
+            {!window.openbyscript?<Redirect to="/chat/inbox"/>:<VideoChat/>}
+          </Route>
+          <Route path="/chat/voicecall/:uid">
+            {!window.openbyscript?<Redirect to="/chat/inbox"/>:<VoiceChat/>}
+          </Route>
           <Route path="/highlight" component={Highlight} />
           <Route path="/accounts/new" component={CreateNew} />
           <Route path="/accounts/notifications" component={Notification} />
@@ -39,7 +48,7 @@ const Routing = () => {
           <Route path="/report/:postId" component={ReportPost}/>
           <Route path="/accounts/edit" component={EditProfile} />          
           <Route path="/:username" component={Dashboard} />
-          <Route path="/" component={Home} />
+          <Route path="/" component={Home} />          
           
         </Switch>
       </Container>

@@ -7,7 +7,7 @@ import Follow from "../utility/Follow";
 import Modal from "../posts/Modal";
 import Button from "../../styles/Button";
 import { UserContext } from "../../context/UserContext";
-import { OptionsIcon,CloseIcon } from "../../Icons";
+import { OptionsIcon,CloseIcon, MsgIcon } from "../../Icons";
 import { connect } from "../../utils/fetchdata";
 import Modify from "../../hooks/Modify";
 
@@ -18,6 +18,10 @@ export const MobileWrapper = styled.div`
   padding-left: 1rem;
   .mobile-profile-stats span {
     padding-right: 1rem;
+  }
+  .header-modal{
+    z-index:5;
+    background:${(props) => props.theme.bg};
   }
   .mobile-bio,
   .mobile-profile-stats {
@@ -45,12 +49,27 @@ export const Wrapper = styled.div`
   align-items: center;
   font-size: 1.1rem;
   margin-bottom: 2rem;
+  .btn{  
+      cursor:pointer;
+      padding: 0.4rem 1rem;
+      color: #fff;
+      border-radius: 4px;
+      margin-top: 1rem;
+      margin-left: 1rem;
+      font-size: 1rem;
+      background:${(props) => props.theme.bg} !important;
+    
+  }
   .avatar {
     width: 180px;
     height: 180px;
     object-fit: cover;
     border-radius: 90px;
     margin-right: 2rem;
+  }
+  .header-modal{
+    z-index:5;
+    background:${(props) => props.theme.bg};
   }
   .profile-meta {
     display: flex;
@@ -108,6 +127,7 @@ export const Wrapper = styled.div`
     .avatar {
       width: 100px;
       height: 100px;
+      margin-left:16px;
     }
   }
 `;
@@ -118,6 +138,10 @@ export const modalHeaderStyle = {
   justifyContent: "space-between",
   borderBottom: "1px solid #DBDBDB",
   padding: "1rem",
+  minWidth:"300px",
+  position:"sticky",
+  top:"0px",
+  background:`${(props) => props.theme.bg}`  
 };
 const OptionContentWrapper = styled.div`
   width: 300px;
@@ -207,8 +231,8 @@ const ModalContent = ({ loggedInUser, users, closeModal, title }) => {
   const history = useHistory();
   const {theme} = useContext(ThemeContext);
   return (
-    <div style={{ maxHeight: "400px", overflowY: "auto" }}>
-      <div style={modalHeaderStyle}>
+    <div style={{ maxHeight: "400px", overflowY: "auto",overflowX:"hidden" }}>
+      <div style={modalHeaderStyle} className="header-modal">
         <h3>{title}</h3>
         <CloseIcon onClick={closeModal} theme={theme} />
       </div>
@@ -217,6 +241,7 @@ const ModalContent = ({ loggedInUser, users, closeModal, title }) => {
           <div className="profile-info">
             <img
               className="pointer"
+              onContextMenu={(e)=>e.preventDefault()}
               onClick={() => {
                 closeModal();
                 history.push(`/${user.username}`);
@@ -308,6 +333,13 @@ const ProfileHeader = ({ profile }) => {
    OTP.setValue(e.target.value);
    e.target.focus();
  }
+ const createRoom = (id)=>{        
+  connect('/chat/new/'+id,{method:"POST"}).then((data)=>{
+      history.push(data.uri);
+  }).catch(err=>{
+      toast.error(err.message);
+  })
+}
  const changePasswordvalue = (e)=>{
    password.setValue(e.target.value);
    e.target.focus();
@@ -317,10 +349,10 @@ const ProfileHeader = ({ profile }) => {
       <PasswordContentWrap>
         <div className="content">
           <input
-          key="input1"
+          id="input1"
           type="password"
           value={password.value}
-          onInput={(e)=>e.target.focus()}
+          onInput={()=>setTimeout(function(){document.getElementById('input1').focus()},100)}
           onChange={changePasswordvalue}
           placeholder="Enter your new password"
           />
@@ -328,9 +360,9 @@ const ProfileHeader = ({ profile }) => {
         <div className="content">
         <input
           type="number"
-          key="input2"
+          id="input2"
           value={OTP.value}
-          onInput={(e)=>e.target.focus()}
+          onInput={()=>setTimeout(function(){document.getElementById('input2').focus()},100)}
           onChange={changeOTPvalue}
           placeholder="Enter OTP"
           />
@@ -363,7 +395,7 @@ const ProfileHeader = ({ profile }) => {
   return (
     <>
       <Wrapper>
-        <img className="avatar" src={profile?.avatar} alt="avatar" />
+        <img className="avatar" src={profile?.avatar} alt="avatar" onContextMenu={(e)=>e.preventDefault()}/>
         <div className="profile-info">
           <div className="profile-meta">
             <h2>{profile?.username}</h2>
@@ -379,6 +411,7 @@ const ProfileHeader = ({ profile }) => {
                 <OptionsIcon fill={theme.primaryColor} onClick={showOption}/>
               </div>
             ) : (
+              <div style={{width:"140px",display:"flex",justifyContent:"space-between",height:"50px"}}>
               <Follow
                 isFollowing={profile?.isFollowing}
                 incFollowers={incFollowers}
@@ -386,6 +419,9 @@ const ProfileHeader = ({ profile }) => {
                 userId={profile?._id}
                 myId={user._id}
               />
+              <span className="btn" style={{border: "1px solid #dbdbdb"}} 
+              onClick={()=>createRoom(profile._id)}><MsgIcon/></span>
+              </div>
             )}
           </div>
 

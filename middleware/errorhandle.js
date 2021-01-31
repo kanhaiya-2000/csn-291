@@ -33,7 +33,7 @@ const errorHandler = (err, req, res, next) => {
     }
   
     if (err.name === "CastError") {
-      message = "Please enter valid credentials";
+      message = "Casting error for database";
       statusCode = 400;
     }
   

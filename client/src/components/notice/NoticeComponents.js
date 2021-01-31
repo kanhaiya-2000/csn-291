@@ -81,6 +81,7 @@ const NoticeComponents = ({ notice }) => {
       <div className="notice-avatar">
         <Avatar
           className="pointer"
+          onContextMenu={(e)=>e.preventDefault()}
           src={notice?.avatar || "https://kkleap.github.io/assets/default_noti.jpg"}
           alt="noti"
         />
