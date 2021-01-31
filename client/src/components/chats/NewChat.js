@@ -141,7 +141,20 @@ const NewChat = () => {
     }
     if (loading)
         return <SkeletonTheme color={theme.skeleton}><NewChatPage>
+        <div className="chatheader">
+                <div className="backbtn" onClick={() => history.push('/chat/Inbox')}><BackIcon /></div>
+                <h3 className="banner">New Messages</h3>
+            </div>
+            <div className="inputdiv">
+                <input id="enter" type="text" placeholder="Search user" className="input"/>
+            </div>
         <div className="results">
+                <LoaderComponent/>
+                <LoaderComponent/>
+                <LoaderComponent/>
+                <LoaderComponent/>
+                <LoaderComponent/>
+                <LoaderComponent/>
                 <LoaderComponent/>
                 <LoaderComponent/>
                 <LoaderComponent/>
@@ -182,7 +195,7 @@ const NewChat = () => {
                         return (
                             <div key= {user._id} style={{cursor:"pointer"}}
                              title={"start a new chat with "+user.fullname} className="userComponent" onClick={()=>createRoom(user._id)}>
-                                <div className="avatar"><Avatar src={user.avatar} lg/></div><div className="userinfo"><div className="username">{user.username}</div> <div className="fullname">{user.fullname}</div>
+                                <div className="avatar"><Avatar src={user.avatar} onContextMenu={(e)=>e.preventDefault()} lg/></div><div className="userinfo"><div className="username">{user.username}</div> <div className="fullname">{user.fullname}</div>
                                 </div>
                             </div>
                         )

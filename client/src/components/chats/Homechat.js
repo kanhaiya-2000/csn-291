@@ -52,10 +52,10 @@ flex-direction:column;
     cursor:pointer;        
     display:flex;
     margin-top:10px;
-    margin-bottom:30px;
+    margin-bottom:10px;
     flex-wrap:nowrap;
-    
-    height:55px;
+    padding: 5px 0px;
+    height:70px;
 }
 
 .chatavatar{
@@ -65,7 +65,7 @@ flex-direction:column;
     margin-left:10px;
 }
 .nextinfo{
-    width:calc(100 % - 50px);
+    width:calc(100% - 50px);
     overflow:hidden;
     
     justify-content:center; 
@@ -99,6 +99,11 @@ flex-direction:column;
     max-width:80%;
     text-overflow:ellipsis;
 }
+.bold{
+    color:green;
+    font-weight:bold;
+}
+
 .lastmessage-parent{
     width:100%;
     display:flex;
@@ -238,7 +243,7 @@ const Homechat = () => {
         if (token && !Socket) {
             Socket.on("connect", () => {
                 setSocket(Socket);
-                //console.log(Messages);
+                ////console.log(Messages);
                 // toast.success("Socket connected");
 
             })
@@ -256,8 +261,9 @@ const Homechat = () => {
         }
         makeSocketConnection();
         connect('/user/chat', { method: "POST" }).then((chats) => {
-            setUsers(chats.data);
-            console.log(chats.data);
+            const data = chats.data.sort(function(a,b){return new Date(b.timeSince) - new Date(a.timeSince)});
+            setUsers(data);
+            //console.log(chats.data);
             setLoading(false);
         }).catch(err => {
             err.logout && logout();
@@ -265,7 +271,7 @@ const Homechat = () => {
             showErr(err.message);
         })
         return () => {
-            if (!window.location.toString().includes('chat'))
+            if (!window.location.toString().includes('chat')&&window.innerWidth < 700)
                 window.location.reload();
             //Socket&&Socket.disconnect();
         }
@@ -274,20 +280,24 @@ const Homechat = () => {
         Socket && Socket.on('msg', function (data) {
             if (document.getElementById(data.roomid)) {
                 document.getElementById(data.roomid).textContent = data.text;
-                document.getElementById(data.roomid).style.fontWeight = "bold";
-                document.getElementById(data.roomid).style.color = "green";
+                document.getElementById(data.roomid).classList.add("bold");
+                const user = users.filter(function(a){return a.id==data.chatRoomid});
+                const user2 = users.filter(function(a){return a.id!=data.chatRoomid});
+                user[0].timeSince = Date.now();
+                const newdata = (user.concat(user2)).sort(function(a,b){return new Date(b.timeSince) - new Date(a.timeSince)});
+                setUsers(newdata);
                 document.getElementById(data.roomid).nextElementSibling.textContent = timeSince(data.createdAt, true);
             }
             else {
-                console.log('requesting verification')
+                //console.log('requesting verification')
                 Socket.emit('requestverification', data.roomid);
             }
 
-            //console.log(data);
+            ////console.log(data);
         });
 
         Socket && Socket.on('deletingmsg', function (data) {
-            console.log("del ", data)
+            //console.log("del ", data)
         })
         return () => {
             if (Socket) {
@@ -297,10 +307,10 @@ const Homechat = () => {
                 Socket.off('msg');
             }
         }
-    }, [Socket])
+    })
     useEffect(() => {
         Socket && Socket.on('addnewlist', function (data) {
-            console.log('here' + JSON.stringify(data));
+            //console.log('here' + JSON.stringify(data));
             if (!document.getElementById(data.id))
                 setUsers([data, ...users]);
         });
@@ -350,12 +360,12 @@ const Homechat = () => {
                         return (
                             <div className="chatcomponent" onClick={() => history.push(`${user.uri}`)} key={user.id} id={user.id}>
                                 <div className="chatavatar">
-                                    <Avatar lg src={user?.avatar} />
+                                    <Avatar lg src={user?.avatar} onContextMenu={(e)=>e.preventDefault()}/>
                                 </div>
                                 <div className="nextinfo">
                                     <div className="username">{user.username}</div>
                                     <div className="lastmessage-parent">
-                                        <div className="lastmessage" id={user?.uri.split("/t/")[1]}>{user?.lastmessage}</div>
+                                    {user.newmsg?<div className="lastmessage bold" id={user?.uri.split("/t/")[1]}>{user?.lastmessage}</div>:<div className="lastmessage" id={user?.uri.split("/t/")[1]}>{user?.lastmessage}</div>}
                                         <div className="since">{user.timeSince ? timeSince(user.timeSince, true) : ""}</div>
                                     </div>
                                 </div>

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState,useContext } from "react";
-import { useHistory, useParams } from "react-router-dom";
+import { Redirect, useHistory, useParams } from "react-router-dom";
 import Linkify from 'react-linkify';
 import {CopyToClipboard} from 'react-copy-to-clipboard';
 import styled from "styled-components";
@@ -11,7 +11,7 @@ import Modal from "../posts/Modal";
 //import io from "Socket.io-client";
 import { connect, timeSince } from "../../utils/fetchdata";
 import Placeholder from "../utility/Placeholder";
-import { BackIcon,InboxIcon } from "../../Icons";
+import { BackIcon,InboxIcon, VideoIcon, VoiceIcon } from "../../Icons";
 import Modify from "../../hooks/Modify";
 import { toast } from "react-toastify";
 import { ModalContentWrapper } from "../posts/PostComponents";
@@ -42,6 +42,21 @@ export const MessageRoom = styled.div`
        color: ${(props) => props.theme.secondaryColor};
        position:relative;
    }
+   .additional{
+       width:72px;
+       float:right;
+       margin-right:12px;
+       display:flex;
+       flex-direction:row;
+       justify-content:space-between;
+       align-items:center;
+       position:absolute;
+       right:20px;       
+   }
+   .icon{
+       padding:4px;
+       margin-right:10px;
+   }
    .intro{
     position: absolute !important;
     top: calc(50% - 100px) !important;
@@ -49,6 +64,7 @@ export const MessageRoom = styled.div`
     flex-direction:column;
     left: calc(50% - 20px) !important;
 }
+
 .text{
     font-weight:bold;
     font-size:18px;
@@ -61,7 +77,7 @@ export const MessageRoom = styled.div`
     align-self:center;
 }
    .roomHeader{
-       width:100%;
+       width:inherit;
        display:flex;
        position:fixed;
        top:0px;
@@ -150,6 +166,12 @@ svg[aria-label="Back"]{
     margin:10px;
     margin-top:0;
 }
+.msgstatus {
+	font-size: 14px;	
+	margin: 0px !important;
+    text-align: right;    
+	margin-right: 25px !important;
+}
 .self,.stamp{
     padding-left:10px;
     word-break:break-word;
@@ -228,14 +250,17 @@ const Mainchat = () => {
     const [users, setUsers] = useState([]);    
     const {Socket,setSocket} = useContext(SocketContext);
     const [Messages, setMessages] = useState([]);
+    const [chatRoomid,setChatRoomid] = useState("");
     const token = localStorage.getItem('accesstoken');
     const [mobile,setMobile] = useState(false);
+    const [msgstatus,showMsgStatus] = useState(false);
     const endRef = useRef(null);
     const inputRef = useRef(null);
     const [mine,setIsMine] = useState(false);
     const [msgId, setId] = useState(null);
     const [loading, setLoading] = useState(true);
     const [loading1, setLoading1] = useState(true);
+    const [isLastMine,setIsLastMine] = useState(false);
     const theme2 = { fill: "#888" };
     const {theme} = useContext(ThemeContext);
     const color = theme.skeleton;
@@ -261,7 +286,7 @@ const Mainchat = () => {
             Socket.connect();
             Socket.on("connect", () => {
                 setSocket(Socket);
-               // console.log(Messages);
+               // //console.log(Messages);
                 // toast.success("Socket connected");
 
             })
@@ -269,7 +294,9 @@ const Mainchat = () => {
             Socket.on('errormsg',function(err){
                  toast.error(err);
             })
-            
+            if(Socket){
+                Socket.emit('read',roomid);
+            }
             Socket.on('disconnect', () => {
                 setSocket(null);
                 toast.error('Socket disconnected');                
@@ -284,10 +311,10 @@ const Mainchat = () => {
 
     const onClick = (e) => {
         
-        console.log('click is triggered')
+        //console.log('click is triggered')
     }
     const idsetter = (id,isMine,text)=>{
-        console.log(id);
+        //console.log(id);
         setIsMine(isMine);
         setId(id);
         setCopyText(text);
@@ -311,8 +338,8 @@ const Mainchat = () => {
     useEffect(() => {
         if(window.innerWidth>=700){
         connect('/user/chat', { method: "POST" }).then((chats) => {
-            setUsers(chats.data);
-           // console.log(chats.data);
+            setUsers(chats.data.sort(function(a,b){return new Date(b.timeSince) - new Date(a.timeSince)}));
+           // //console.log(chats.data);
             setLoading1(false);
         }).catch(err => {
             err.logout && logout();
@@ -325,23 +352,53 @@ const Mainchat = () => {
     }
         connect('/chat/' + roomid, { method: "POST" }).then((detail) => {
             setMessages(detail.messages);
-           // console.log(detail.messages);
+            showMsgStatus(detail.isSeen);
+            setChatRoomid(detail.roomid);
+           // //console.log(detail.messages);
             setUser(detail.user);
             setLoading(false);
+            setTimeout(function(){
             scrollToend();
+            if(document.getElementById(detail.roomid)){
+                document.getElementById(detail.roomid).style.backgroundColor = theme.chatBg;
+            }
+            
+        },1000)
             makeSocketConnection();
         }).catch(err => {
             err.logout && logout();
             setErr(err.message);
             setLoading(false);
         })
-
+        return ()=>{
+            if(Socket){
+                Socket.off('errormsg');
+                Socket.off('disconnect');
+            }
+        }
     }, []);
     useEffect(()=>{
+        Socket&&Socket.emit('read',roomid);         
+    });
+    useEffect(()=>{
+        Socket&&Socket.on('readmsg',function(data){
+            showMsgStatus(isLastMine);            
+            scrollToend();
+        })
+        return ()=>{
+            Socket.off('readmsg');
+        }
+    })
+    useEffect(()=>{        
+        
         Socket&&Socket.on("msg", function (data) {
+            showMsgStatus(false);
             if(data.roomid===roomid){
             //Messages.push(data.data);
-            //console.log(data);
+            ////console.log(data);
+            setIsLastMine(data.isMine);
+            if(!data.isMine)
+                Socket.emit('read',data.roomid);
             const newmsg = [...Messages, data];
             setMessages(newmsg);
             if(endRef?.current)
@@ -350,7 +407,7 @@ const Mainchat = () => {
                     document.getElementById(data.roomid).textContent = data.text;                    
                     document.getElementById(data.roomid).nextElementSibling.textContent = timeSince(data.createdAt,true);
                 }
-           // console.log("Socketdata", Messages);
+           // //console.log("Socketdata", Messages);
         }
         else{
             if(mobile&&!data.isMine){
@@ -358,18 +415,25 @@ const Mainchat = () => {
             }
             else if(document.getElementById(data.roomid)){
                 document.getElementById(data.roomid).textContent = data.text;
-                document.getElementById(data.roomid).style.fontWeight="bold";
-                document.getElementById(data.roomid).style.color = "green";
+                document.getElementById(data.roomid).classList.add("bold");                
                 document.getElementById(data.roomid).nextElementSibling.textContent = timeSince(data.createdAt,true);
                 if(!data.isMine)
                     toast.success("\n"+data.sender+": "+data.text.substring(0,20)+"...");
             }
             else{                
-                console.log('requesting verification');
+                //console.log('requesting verification');
                 Socket.emit('requestverification',data.roomid);
                 
             }
             
+        }
+        if(document.getElementById(data.roomid)){
+            ////console.log(users);
+            const user = users.filter(function(a){return a.id==data.chatRoomid});
+            const user2 = users.filter(function(a){return a.id!=data.chatRoomid});
+            user[0].timeSince = Date.now();
+            const newdata = (user.concat(user2)).sort(function(a,b){return new Date(b.timeSince) - new Date(a.timeSince)});
+            setUsers(newdata);
         }
         })
         Socket&&Socket.on('deletingmsg',function(id){
@@ -378,13 +442,14 @@ const Mainchat = () => {
         return ()=>{
             if(Socket){
             Socket.off('deletingmsg');
-            Socket.off('msg');
-            Socket.off('errormsg');
-            Socket.off('disconnect');
+            Socket.off('msg');          
             }
+            if (!window.location.toString().includes('chat')&&window.innerWidth < 700){
+                window.location.reload();            
+        }
         }
         
-    },[Messages,Socket]);
+    });
     const componentDecorator = (href, text, key) => (
         <a href={href} key={key} target="_blank" rel="noopener noreferrer">
           {text}
@@ -393,7 +458,7 @@ const Mainchat = () => {
       
     useEffect(()=>{
         Socket&&Socket.on('addnewlist',function(data){
-            console.log('here');
+            //console.log('here');
             if(!document.getElementById(data.id)){
                 setUsers([data,...users]);
                 //toast.success("New message from "+data.username);
@@ -404,18 +469,36 @@ const Mainchat = () => {
                 Socket.off('addnewlist')
         }
     },[users,Socket])
+    const handleCall=(Video)=>{
+        if(localStorage.getItem('userdetail')){
+            const myId = JSON.parse(localStorage.getItem('userdetail'))._id;
+            const otheruserId = roomid.split('_').filter(function(t){
+                return t!=myId;
+            })[0];
+            let win;
+            if(Video){
+               win = window.open('/chat/videocall/'+otheruserId);
+            }
+            else{
+               win = window.open('/chat/voicecall/'+otheruserId);
+            }
+            win.openbyscript = true;
+        }
+    }
     const handleSubmit = (e) => {
         if (e.keyCode === 13) {
             scrollToend();
-            //console.log(Socket.id);
+            showMsgStatus(false);
+            ////console.log(Socket.id);
             Socket.emit("msg", { roomid: roomid, message: inp.value });
             inp.setValue("");
         }
     }
     const handleSubmit2 = () => {        
             scrollToend();
-            //console.log(Socket.id);
+            ////console.log(Socket.id);
             inputRef.current.focus();
+            showMsgStatus(false);
             Socket.emit("msg", { roomid: roomid, message: inp.value });
             inp.setValue("");
         
@@ -517,12 +600,12 @@ const Mainchat = () => {
                                 return (
                                     <div className="chatcomponent" onClick={() => history.push(`${user.uri}`)} key={user.id} title={user.username} id={user.id}>
                                         <div className="chatavatar">
-                                            <Avatar lg src={user?.avatar} />
+                                            <Avatar lg src={user?.avatar} onContextMenu={(e)=>e.preventDefault()}/>
                                         </div>
                                         <div className="nextinfo">
                                             <div className="username">{user.username}</div>
                                             <div className="lastmessage-parent">
-                                                <div className="lastmessage" id={user?.uri.split("/t/")[1]}>{user?.lastmessage}</div>
+                                                {user.newmsg&&chatRoomid!=user.id?<div className="lastmessage bold" id={user?.uri.split("/t/")[1]}>{user?.lastmessage}</div>:<div className="lastmessage" id={user?.uri.split("/t/")[1]}>{user?.lastmessage}</div>}
                                                 <div className="since">{user.timeSince ? timeSince(user.timeSince,true) : ""}</div>
                                             </div>
                                         </div>
@@ -540,7 +623,7 @@ const Mainchat = () => {
                             msgId={msgId}
                             roomid={roomid}
                             text={TXT}
-                            isMine={mine}                            
+                            isMine={mine}                           
                             Socket={Socket}
                             closeModal={closeModal}
                         />
@@ -550,10 +633,14 @@ const Mainchat = () => {
             }
             <div className="roomHeader">
                 <div className="backbtn" onClick={() => history.push('/chat/inbox')}><BackIcon /></div>
-                <Avatar src={user.avatar} style={{marginTop:"4px"}}/>
+                <Avatar src={user.avatar} style={{marginTop:"4px"}} onContextMenu={(e)=>e.preventDefault()}/>
                 <div className="infowrapper" title={user.bio} onClick={()=>history.push(`/${user.username}`)}>
                 <h3 className="uname" style={{ fontWeight: 'bold' }}>{user.username}</h3>
                 <span className="fname">{user.fullname}</span>
+                </div>
+                <div className="additional">
+                    <div className="icon" onClick={()=>handleCall(true)}><VideoIcon/></div>
+                    <div className="icon" onClick={()=>handleCall(false)}><VoiceIcon/></div>
                 </div>
             </div>
             <div className="message">
@@ -583,6 +670,7 @@ const Mainchat = () => {
                         </div>
                     })
                 }
+                {msgstatus&&<div className="msgstatus msgpiece secondary">seen</div>}
                 <div className="msgpiece" ref={endRef} key="unique"></div>
             </div>
             <div className="footerchat">
